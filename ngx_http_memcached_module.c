@@ -17,7 +17,8 @@
 
 typedef struct {
     ngx_http_upstream_conf_t   upstream;
-    ngx_int_t                  index;
+    ngx_int_t                  key_index;
+    ngx_int_t                  expire_index;
     ngx_flag_t                 hash_keys_with_md5;
     ngx_flag_t                 allow_put;
     ngx_flag_t                 stats;
@@ -50,6 +51,7 @@ static void ngx_http_memcached_abort_request(ngx_http_request_t *r);
 static void ngx_http_memcached_finalize_request(ngx_http_request_t *r,
     ngx_int_t rc);
 
+static ngx_int_t ngx_http_memcached_init(ngx_conf_t *cf);
 static void *ngx_http_memcached_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf,
     void *parent, void *child);
@@ -153,7 +155,7 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
 
 static ngx_http_module_t  ngx_http_memcached_module_ctx = {
     NULL,                                  /* preconfiguration */
-    NULL,                                  /* postconfiguration */
+    ngx_http_memcached_init,               /* postconfiguration */
 
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -183,7 +185,7 @@ ngx_module_t  ngx_http_memcached_module = {
 
 
 static ngx_str_t  ngx_http_memcached_key = ngx_string("memcached_key");
-
+static ngx_str_t  ngx_http_memcached_expire = ngx_string("memcached_expire");
 
 #define NGX_HTTP_MEMCACHED_END   (sizeof(ngx_http_memcached_end) - 1)
 static u_char  ngx_http_memcached_end[] = CRLF "END" CRLF;
@@ -347,7 +349,7 @@ ngx_http_memcached_extract_key(ngx_http_request_t * r) {
     
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
 
-    vv = ngx_http_get_indexed_variable(r, mlcf->index);
+    vv = ngx_http_get_indexed_variable(r, mlcf->key_index);
 
     if (vv == NULL || vv->not_found || vv->len == 0) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -430,13 +432,18 @@ ngx_http_memcached_create_request(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_memcached_create_request_set(ngx_http_request_t *r)
 {
-    size_t                          expire = 0;
     uintptr_t                       bytes_len;
     off_t                           bytes;
+    ngx_http_variable_value_t       default_expire_value;
     ngx_buf_t                      *b;
     ngx_chain_t                    *cl, *in;
+    ngx_http_variable_value_t      *vv;
+    ngx_http_memcached_loc_conf_t  *mlcf;
     u_char                          bytes_buf[NGX_UINT32_LEN];
 
+    default_expire_value.data = (u_char *) "0";
+    default_expire_value.len = 1;
+    
     cl = ngx_http_memcached_create_buffer(r, 4);
     if (cl == NULL) {
         return NGX_ERROR;
@@ -462,16 +469,28 @@ ngx_http_memcached_create_request_set(ngx_http_request_t *r)
     
     *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' ';
     
-    bytes_len = ngx_snprintf(bytes_buf, sizeof(bytes_buf), "%O", expire) - bytes_buf;
+    
+    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+    vv = ngx_http_get_indexed_variable(r, mlcf->expire_index);
 
-    cl->next = ngx_http_memcached_create_buffer(r, bytes_len + 1);
+    if (vv == NULL || vv->not_found || vv->len == 0) {
+        vv = &default_expire_value;
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                      "the \"$memcached_expire\" variable is not set, use 0 value");
+    }
+    else {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                      "expire is set to \"%v\"", vv);
+    }
+    
+    cl->next = ngx_http_memcached_create_buffer(r, vv->len + 1);
     cl = cl->next;
     if (cl == NULL) {
       return NGX_ERROR;
     }
     b = cl->buf;
     
-    b->last = ngx_copy(b->last, bytes_buf, bytes_len);
+    b->last = ngx_copy(b->last, vv->data, vv->len);
     *b->last++ = ' ';
     
     bytes = 0;
@@ -1103,7 +1122,8 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->stats = NGX_CONF_UNSET;
     conf->flush = NGX_CONF_UNSET;
 
-    conf->index = NGX_CONF_UNSET;
+    conf->key_index = NGX_CONF_UNSET;
+    conf->expire_index = NGX_CONF_UNSET;
 
     return conf;
 }
@@ -1143,8 +1163,12 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->upstream.upstream = prev->upstream.upstream;
     }
 
-    if (conf->index == NGX_CONF_UNSET) {
-        conf->index = prev->index;
+    if (conf->key_index == NGX_CONF_UNSET) {
+        conf->key_index = prev->key_index;
+    }
+
+    if (conf->expire_index == NGX_CONF_UNSET) {
+        conf->expire_index = prev->expire_index;
     }
 
     if (conf->hash_keys_with_md5 == NGX_CONF_UNSET) {
@@ -1212,11 +1236,45 @@ ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         clcf->auto_redirect = 1;
     }
 
-    mlcf->index = ngx_http_get_variable_index(cf, &ngx_http_memcached_key);
+    mlcf->key_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_key);
 
-    if (mlcf->index == NGX_ERROR) {
+    if (mlcf->key_index == NGX_ERROR) {
         return NGX_CONF_ERROR;
     }
 
+    mlcf->expire_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_expire);
+
+    if (mlcf->expire_index == NGX_ERROR) {
+        return NGX_CONF_ERROR;
+    }
+    
     return NGX_CONF_OK;
+}
+
+static ngx_int_t
+ngx_http_memcached_variable_not_found(ngx_http_request_t *r,
+        ngx_http_variable_value_t *v, uintptr_t data)
+{
+    v->not_found = 1;
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_memcached_init(ngx_conf_t *cf) {
+  ngx_http_variable_t *v;
+
+  v = ngx_http_add_variable(cf, &ngx_http_memcached_key, NGX_HTTP_VAR_CHANGEABLE);
+  if (v == NULL) {
+      return NGX_ERROR;
+  }
+  v->get_handler = ngx_http_memcached_variable_not_found;
+ 
+  v = ngx_http_add_variable(cf, &ngx_http_memcached_expire, NGX_HTTP_VAR_CHANGEABLE);
+  if (v == NULL) {
+      return NGX_ERROR;
+  }
+  v->get_handler = ngx_http_memcached_variable_not_found;
+  
+  return NGX_OK;
 }
