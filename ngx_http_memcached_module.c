@@ -856,6 +856,9 @@ found:
             
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "memcache stats end reach, final response size : %d", u->headers_in.content_length_n);
+            ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+                          "memcached stats OK");
+            
             return NGX_OK;
           }
           u->headers_in.content_length_n += line.len + 2;
