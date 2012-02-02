@@ -1293,9 +1293,9 @@ length:
         return NGX_OK;
     }
 
-    if (ngx_strcmp(p, "END" CRLF) == 0) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "key: \"%V\" was not found by memcached", &ctx->key);
+    if (u->buffer.pos + sizeof("END") - 1 <= u->buffer.last && ngx_strncmp(u->buffer.pos, "END", sizeof("END") - 1) == 0) {
+        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "memcached key not found : \"%V\"", &ctx->key);
 
         u->headers_in.status_n = 404;
         u->state->status = 404;
