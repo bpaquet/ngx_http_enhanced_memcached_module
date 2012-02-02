@@ -16,6 +16,8 @@
 typedef struct {
     ngx_http_upstream_conf_t   upstream;
     ngx_int_t                  index;
+    ngx_flag_t                 allow_extended_methods;
+    ngx_uint_t                 method_filter;
 } ngx_http_memcached_loc_conf_t;
 
 
@@ -61,6 +63,13 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
       ngx_http_memcached_pass,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
+      NULL },
+
+    { ngx_string("memcached_allow_extended_commands"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, allow_extended_methods),
       NULL },
 
     { ngx_string("memcached_bind"),
@@ -155,10 +164,6 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     ngx_http_memcached_ctx_t       *ctx;
     ngx_http_memcached_loc_conf_t  *mlcf;
 
-    if (!(r->method & (NGX_HTTP_GET|NGX_HTTP_HEAD|NGX_HTTP_PUT))) {
-        return NGX_HTTP_NOT_ALLOWED;
-    }
-    
     if (ngx_http_set_content_type(r) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -173,6 +178,10 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     u->output.tag = (ngx_buf_tag_t) &ngx_http_memcached_module;
 
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+
+    if (!(r->method & mlcf->method_filter)) {
+        return NGX_HTTP_NOT_ALLOWED;
+    }
 
     u->conf = &mlcf->upstream;
 
@@ -823,6 +832,7 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->upstream.pass_request_headers = 0;
     conf->upstream.pass_request_body = 0;
 
+    conf->allow_extended_methods = NGX_CONF_UNSET;
     conf->index = NGX_CONF_UNSET;
 
     return conf;
@@ -866,6 +876,16 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->index == NGX_CONF_UNSET) {
         conf->index = prev->index;
     }
+
+    if (conf->index == NGX_CONF_UNSET) {
+        conf->index = prev->index;
+    }
+    
+    if (conf->allow_extended_methods == NGX_CONF_UNSET) {
+      conf->allow_extended_methods = 0;
+    }
+    
+    conf->method_filter = conf->allow_extended_methods ? NGX_HTTP_GET|NGX_HTTP_HEAD|NGX_HTTP_PUT : NGX_HTTP_GET|NGX_HTTP_HEAD;
 
     return NGX_CONF_OK;
 }
