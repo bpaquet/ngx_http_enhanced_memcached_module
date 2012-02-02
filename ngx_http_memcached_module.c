@@ -368,7 +368,7 @@ found:
           p += sizeof(EXTRACT_HEADERS) - 1;
           u->headers_in.content_length_n -= sizeof(EXTRACT_HEADERS) - 1;
           
-          while (true) {
+          while (1) {
             delim = (u_char *) ngx_strstr(p, ": ");
             if (delim == NULL) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
