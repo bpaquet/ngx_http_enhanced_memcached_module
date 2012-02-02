@@ -5,7 +5,7 @@ Goals
 
 Main features : 
 
-* Send customs http headers to client when using memcached module. Http headers are stored in memcached, with body data.
+* Send customs http headers to client when using memcached `module. Http headers are stored in memcached, with body data.
 * Hash keys before inserting into memcached : allow to have very big keys
 * Put data into memcached, with expire time. You can use the `add` or `set` memcached command.
 * Delete data from memcached
@@ -13,6 +13,19 @@ Main features :
 * Get memcached'stats
 
 Note : the third last features are mutually exclusive on the same nginx location.
+
+How to use it
+===
+
+Clone the code
+
+    git clone git://github.com/bpaquet/ngx_http_enhanced_memcached_module.git
+    
+Compile Nginx with option in `./configure`
+    
+    --add-module=/my/path/to/my/clone/ngx_http_enhanced_memcached_module
+
+Enjoy !
 
 Custom HTTP Headers
 ===
