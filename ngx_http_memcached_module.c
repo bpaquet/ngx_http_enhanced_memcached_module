@@ -1152,8 +1152,10 @@ length:
 #define EXTRACT_HEADERS "EXTRACT_HEADERS\r\n"
 
         if (ngx_strncmp(p, EXTRACT_HEADERS, sizeof(EXTRACT_HEADERS) - 1) == 0) {
-          u_char *search, *name, *value;
-          int name_len, value_len;
+          ngx_table_elt_t *h;
+          u_char *search, *key, *value;
+          int key_len, value_len;
+          ngx_uint_t i;
           
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "extracting headers from memcached value");
@@ -1187,15 +1189,10 @@ length:
             
 colon_found:
 
-            name_len = search - p;
-            name = (u_char *) ngx_palloc(r->pool, name_len + 1);
-            if (name == NULL) {
-              return NGX_ERROR;
-            }
-            ngx_memcpy(name, p, name_len);
-            name[name_len] = 0;
+            key_len = search - p;
+            key = p;
             p = search + 2;
-            u->headers_in.content_length_n -= name_len + 2;
+            u->headers_in.content_length_n -= key_len + 2;
             
             for(search = p; search < u->buffer.last - 1; search ++) {
               if (*search == CR && *(search + 1) == LF) {
@@ -1211,80 +1208,47 @@ colon_found:
 end_of_header_found:
 
             value_len = search - p;
-            value = (u_char *) ngx_palloc(r->pool, value_len + 1);
-            if (value == NULL) {
-              return NGX_ERROR;
-            }
-            ngx_memcpy(value, p, value_len);
-            value[value_len] = 0;
+            value = p;
             p = search + 2;
             u->headers_in.content_length_n -= value_len + 2;
             
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "http header read in memcached : %s: %s ", name, value);
-              
-            if (ngx_strcmp(name, "Content-Type") == 0) {
-              r->headers_out.content_type.data = value;
-              r->headers_out.content_type.len = value_len;
-              r->headers_out.content_type_len = value_len;
-              r->headers_out.content_type_lowcase = NULL;
+            h = ngx_list_push(&u->headers_in.headers);
+            if (h == NULL) {
+              return NGX_ERROR;
             }
-            else {
-              ngx_table_elt_t *h = ngx_list_push(&r->headers_out.headers);
-              if (h == NULL) {
+            
+            h->key.len = key_len;
+            h->value.len = value_len;
+            
+            h->key.data = ngx_pnalloc(r->pool, h->key.len + 1 + h->value.len + 1 + h->key.len);
+            if (h->key.data == NULL) {
                 return NGX_ERROR;
-              }
-              
-              h->key.data = name;
-              h->key.len = name_len;
-              
-              h->value.data = value;
-              h->value.len = value_len;
-              h->hash = 1;
-              
-              if (ngx_strcmp(name, "Server") == 0) {
-                r->headers_out.server = h;
-              }
-              if (ngx_strcmp(name, "Date") == 0) {
-                r->headers_out.date = h;
-              }
-              if (ngx_strcmp(name, "Content-Length") == 0) {
-                r->headers_out.content_length = h;
-              }
-              if (ngx_strcmp(name, "Content-Encoding") == 0) {
-                r->headers_out.content_encoding = h;
-              }
-              if (ngx_strcmp(name, "Location") == 0) {
-                r->headers_out.location = h;
-              }
-              if (ngx_strcmp(name, "Refresh") == 0) {
-                r->headers_out.refresh = h;
-              }
-              if (ngx_strcmp(name, "Last-Modified") == 0) {
-                r->headers_out.last_modified = h;
-              }
-              if (ngx_strcmp(name, "Content-Range") == 0) {
-                r->headers_out.content_range = h;
-              }
-              if (ngx_strcmp(name, "Accept-Ranges") == 0) {
-                r->headers_out.accept_ranges = h;
-              }
-              if (ngx_strcmp(name, "WWW-Authenticate") == 0) {
-                r->headers_out.www_authenticate = h;
-              }
-              if (ngx_strcmp(name, "Expires") == 0) {
-                r->headers_out.expires = h;
-              }
-              if (ngx_strcmp(name, "Etag") == 0) {
-                r->headers_out.etag = h;
-              }
             }
+
+            h->value.data = h->key.data + h->key.len + 1;
+            h->lowcase_key = h->key.data + h->key.len + 1 + h->value.len + 1;
+
+            ngx_cpystrn(h->key.data, key, h->key.len + 1);
+            ngx_cpystrn(h->value.data, value, h->value.len + 1);
+
+            ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
+
+            h->hash = 0;
+
+            for(i = 0; i < h->key.len; i ++) {
+              h->hash = ngx_hash(h->hash, h->lowcase_key[i]);              
+            }
+
+            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "http header read in memcached : %v: %v", &h->key, &h->value);
           }
         }
-
         u->headers_in.status_n = 200;
         u->state->status = 200;
         u->buffer.pos = p;
+
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                        "http out of memcached process header");
 
         return NGX_OK;
     }
@@ -1710,6 +1674,9 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
                                |NGX_HTTP_UPSTREAM_FT_ERROR
                                |NGX_HTTP_UPSTREAM_FT_TIMEOUT));
 
+    conf->upstream.hide_headers_hash.buckets = ngx_pcalloc(cf->pool, sizeof(ngx_hash_elt_t *));
+    conf->upstream.hide_headers_hash.size = 1;
+
     if (conf->upstream.next_upstream & NGX_HTTP_UPSTREAM_FT_OFF) {
         conf->upstream.next_upstream = NGX_CONF_BITMASK_SET
                                        |NGX_HTTP_UPSTREAM_FT_OFF;
@@ -1756,7 +1723,7 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
       return NGX_CONF_ERROR;
     }
     
-    if (conf->flush || conf->stats) {
+    if (conf->flush || conf->stats || conf->flush_namespace) {
       conf->method_filter = NGX_HTTP_GET;
     }
     else {
