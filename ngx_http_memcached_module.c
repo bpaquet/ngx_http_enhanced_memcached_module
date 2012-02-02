@@ -26,6 +26,7 @@ typedef struct {
     ngx_flag_t                 allow_delete;
     ngx_flag_t                 stats;
     ngx_flag_t                 flush;
+    ngx_flag_t                 flush_namespace;
     ngx_uint_t                 method_filter;
 } ngx_http_memcached_loc_conf_t;
 
@@ -45,6 +46,7 @@ typedef struct {
     size_t                     end_len;
     ngx_http_memcached_key_status_t key_status;
     ngx_str_t                  namespace_key;
+    ngx_str_t                  namespace_value;
     ngx_int_t                 (*when_key_ready)(ngx_http_request_t *r);
 } ngx_http_memcached_ctx_t;
 
@@ -56,12 +58,14 @@ static ngx_int_t ngx_http_memcached_send_request_set(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_flush(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_stats(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_delete(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_send_request_incr_ns(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_reinit_request(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_request_get(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_request_set(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_request_flush(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_request_stats(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_request_delete(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_incr_ns(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_filter_init(void *data);
 static ngx_int_t ngx_http_memcached_filter(void *data, ssize_t bytes);
 static void ngx_http_memcached_abort_request(ngx_http_request_t *r);
@@ -129,6 +133,13 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_memcached_loc_conf_t, flush),
+      NULL },
+    
+    { ngx_string("memcached_flush_namespace"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, flush_namespace),
       NULL },
     
     { ngx_string("memcached_bind"),
@@ -279,6 +290,14 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->end = ngx_http_memcached_end;
       u->create_request = ngx_http_memcached_send_request_stats;
       u->process_header = ngx_http_memcached_process_request_stats;
+    }
+    else if (mlcf->flush_namespace) {
+      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
+      ctx->end = ngx_http_memcached_crlf;
+      ctx->key_status = UNKNOWN;
+      ctx->when_key_ready = ngx_http_memcached_send_request_incr_ns;
+      u->create_request = ngx_http_memcached_compute_key;
+      u->process_header = ngx_http_memcached_process_request_incr_ns;
     }
     else if(r->method & (NGX_HTTP_PUT)) {
       read_body = 1;
@@ -515,22 +534,22 @@ ngx_memcached_initialize_namespace(ngx_http_request_t * r) {
 }
 
 static ngx_int_t
-ngx_memcached_set_key_with_namespace(ngx_http_request_t * r, u_char *k, size_t k_len) {
+ngx_memcached_set_key_with_namespace(ngx_http_request_t * r) {
   ngx_http_memcached_ctx_t       *ctx;
   ngx_buf_t                      *b;
   
   ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
   
   ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-    "memcached compute key from \"%V\" for namespace \"%V\"", &ctx->key, &ctx->namespace_key);
+    "memcached compute key from \"%V\" for namespace \"%V\" : \"%v\"", &ctx->key, &ctx->namespace_key, &ctx->namespace_value);
 
-  b = ngx_create_temp_buf(r->pool, ctx->namespace_key.len + ctx->key.len + k_len);
+  b = ngx_create_temp_buf(r->pool, ctx->namespace_key.len + ctx->key.len + ctx->namespace_value.len);
   b->last = ngx_copy(b->last, ctx->namespace_key.data, ctx->namespace_key.len);
   b->last = ngx_copy(b->last, ctx->key.data, ctx->key.len);
-  b->last = ngx_copy(b->last, k,k_len);
+  b->last = ngx_copy(b->last, ctx->namespace_value.data, ctx->namespace_value.len);
   
   ctx->key.data = b->pos;
-  ctx->key.len = ctx->namespace_key.len + ctx->key.len + k_len;
+  ctx->key.len = ctx->namespace_key.len + ctx->key.len + ctx->namespace_value.len;
   
   ctx->key_status = READY;
   
@@ -621,7 +640,10 @@ length:
 
       p ++;
 
-      rc = ngx_memcached_set_key_with_namespace(r, p, s);
+      ctx->namespace_value.data = p;
+      ctx->namespace_value.len = s;
+      
+      rc = ngx_memcached_set_key_with_namespace(r);
       if (rc != NGX_OK) {
         return rc;
       };
@@ -646,7 +668,11 @@ length:
                          "memcached namespace initialized for : \"%V\"", &ctx->namespace_key);
 
       u->buffer.pos = p + 1;
-      rc = ngx_memcached_set_key_with_namespace(r, (u_char *) "0", 1);
+      
+      ctx->namespace_value.data = (u_char *) "0";
+      ctx->namespace_value.len = 1;
+      
+      rc = ngx_memcached_set_key_with_namespace(r);
       if (rc != NGX_OK) {
         return rc;
       };
@@ -771,6 +797,35 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
       return ngx_http_memcached_get_namespace(r, vv);
     }
 }
+
+static ngx_int_t
+ngx_http_memcached_send_request_incr_ns(ngx_http_request_t *r) {
+  ngx_chain_t                    *cl;
+  ngx_buf_t                      *b;
+  ngx_http_memcached_ctx_t       *ctx;
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  
+  cl = ngx_http_memcached_create_buffer(r, 5 + ctx->namespace_key.len + 2 + 2);
+  if (cl == NULL) {
+    return NGX_ERROR;
+  }
+  
+  r->upstream->request_bufs = cl;
+  
+  b = cl->buf;
+
+  *b->last++ = 'i'; *b->last++ = 'n'; *b->last++ = 'c'; *b->last++ = 'r'; *b->last++ = ' ';
+  
+  b->last = ngx_copy(b->last, ctx->namespace_key.data, ctx->namespace_key.len);
+
+  *b->last++ = ' '; *b->last++ = '1';
+
+  *b->last++ = CR; *b->last++ = LF;
+
+  return NGX_OK;
+}
+
 
 static ngx_int_t
 ngx_http_memcached_send_request_get(ngx_http_request_t *r)
@@ -1254,7 +1309,7 @@ no_valid:
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_fixed_string(ngx_http_request_t *r, char * cmd, char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
+ngx_http_memcached_process_request_return_string(ngx_http_request_t *r, char * cmd, u_char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
 {
     int                      return_code; 
     u_char                    *p;
@@ -1328,16 +1383,47 @@ ngx_http_memcached_process_request_set(ngx_http_request_t *r)
     return ngx_http_memcached_process_key(r);
   }
 
-  return ngx_http_memcached_process_request_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
+  return ngx_http_memcached_process_request_return_string(r, "set", (u_char *) "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
 }
 
 static ngx_int_t
 ngx_http_memcached_process_request_flush(ngx_http_request_t *r)
 {
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_request_fixed_string(r, "flush", "OK", sizeof("OK") - 1, -1, NULL, -1);
+  rc = ngx_http_memcached_process_request_return_string(r, "flush", (u_char *) "OK", sizeof("OK") - 1, -1, NULL, -1);
   if (rc == NGX_OK) {
      ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached flush OK");
+  }
+  return rc;
+}
+
+static ngx_int_t
+ngx_http_memcached_process_request_incr_ns(ngx_http_request_t *r)
+{
+  ngx_int_t                       rc;
+  off_t                           current;
+  u_char                          bytes_buf[NGX_UINT32_LEN];
+  u_int                           bytes_len;
+  
+  ngx_http_memcached_ctx_t  *ctx;
+
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+
+  if (ctx->key_status != READY) {
+    return ngx_http_memcached_process_key(r);
+  }
+  
+  current = ngx_atoof(ctx->namespace_value.data, ctx->namespace_value.len);
+  
+  ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                "memcached current namespace \"%V\", value : %d", &ctx->namespace_key, current);
+  
+  current ++;
+  bytes_len = ngx_snprintf(bytes_buf, sizeof(bytes_buf), "%O", current) - bytes_buf;
+  
+  rc = ngx_http_memcached_process_request_return_string(r, "incr ns", bytes_buf, bytes_len, -1, NULL, -1);
+  if (rc == NGX_OK) {
+     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached incr ns OK");
   }
   return rc;
 }
@@ -1354,7 +1440,7 @@ ngx_http_memcached_process_request_delete(ngx_http_request_t *r)
   }
    
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_request_fixed_string(r, "delete", "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
+  rc = ngx_http_memcached_process_request_return_string(r, "delete", (u_char *) "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
   if (rc == NGX_OK) {
      ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached delete OK");
   }
@@ -1590,6 +1676,7 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->allow_delete = NGX_CONF_UNSET;
     conf->stats = NGX_CONF_UNSET;
     conf->flush = NGX_CONF_UNSET;
+    conf->flush_namespace = NGX_CONF_UNSET;
 
     conf->key_index = NGX_CONF_UNSET;
     conf->expire_index = NGX_CONF_UNSET;
@@ -1659,9 +1746,13 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->flush == NGX_CONF_UNSET) {
       conf->flush = 0;
     }
+
+    if (conf->flush_namespace == NGX_CONF_UNSET) {
+      conf->flush_namespace = 0;
+    }
     
-    if ((conf->flush && conf->stats) || (conf->flush && conf->allow_put) || (conf->stats && conf->allow_put)) {
-      ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "memcached configuration : stats, flush and allow put are mutually exclusive");
+    if ((conf->flush && conf->stats) || (conf->flush && conf->allow_put) || (conf->stats && conf->allow_put) || (conf->flush && conf->flush_namespace) || (conf->stats && conf->flush_namespace) || (conf->allow_put && conf->flush_namespace)) {
+      ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "memcached configuration : stats, flush, flush_namespace and allow put are mutually exclusive");
       return NGX_CONF_ERROR;
     }
     
