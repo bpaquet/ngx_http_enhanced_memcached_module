@@ -21,6 +21,7 @@ typedef struct {
     ngx_int_t                  expire_index;
     ngx_flag_t                 hash_keys_with_md5;
     ngx_flag_t                 allow_put;
+    ngx_flag_t                 allow_delete;
     ngx_flag_t                 stats;
     ngx_flag_t                 flush;
     ngx_uint_t                 method_filter;
@@ -40,11 +41,13 @@ static ngx_int_t ngx_http_memcached_create_request(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_create_request_set(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_create_request_flush(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_create_request_stats(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_create_request_delete(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_reinit_request(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_header(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_header_set(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_header_flush(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_process_header_stats(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_header_delete(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_filter_init(void *data);
 static ngx_int_t ngx_http_memcached_filter(void *data, ssize_t bytes);
 static void ngx_http_memcached_abort_request(ngx_http_request_t *r);
@@ -91,6 +94,13 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_memcached_loc_conf_t, allow_put),
+      NULL },
+
+    { ngx_string("memcached_allow_delete"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, allow_delete),
       NULL },
 
     { ngx_string("memcached_stats"),
@@ -261,7 +271,13 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->end = ngx_http_memcached_crlf;
       u->create_request = ngx_http_memcached_create_request_set;
       u->process_header = ngx_http_memcached_process_header_set;      
-     
+    }
+    else if(r->method & (NGX_HTTP_DELETE)) {
+      read_body = 1;
+      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
+      ctx->end = ngx_http_memcached_crlf;
+      u->create_request = ngx_http_memcached_create_request_delete;
+      u->process_header = ngx_http_memcached_process_header_delete;      
     }
     else {
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
@@ -559,6 +575,43 @@ ngx_http_memcached_create_request_set(ngx_http_request_t *r)
 }
 
 static ngx_int_t
+ngx_http_memcached_create_request_delete(ngx_http_request_t *r)
+{
+    ngx_buf_t                      *b;
+    ngx_chain_t                    *cl;
+    
+    cl = ngx_http_memcached_create_buffer(r, 7);
+    if (cl == NULL) {
+        return NGX_ERROR;
+    }
+    b = cl->buf;
+
+    *b->last++ = 'd'; *b->last++ = 'e'; *b->last++ = 'l'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = 'e'; *b->last++ = ' ';
+
+    r->upstream->request_bufs = cl;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                  "memcached : send delete command");
+
+    cl->next = ngx_http_memcached_extract_key(r);
+    if (cl->next == NULL) {
+      return NGX_ERROR;
+    }
+    cl = cl->next;
+    
+    cl->next = ngx_http_memcached_create_buffer(r, 2);
+    cl = cl->next;
+    if (cl == NULL) {
+        return NGX_ERROR;
+    }
+    b = cl->buf;
+
+    *b->last++ = CR; *b->last++ = LF;
+    
+    return NGX_OK;
+}
+
+static ngx_int_t
 ngx_http_memcached_create_request_fixed_str(ngx_http_request_t *r, char * cmd, char * str, u_int str_len)
 {
     ngx_buf_t                      *b;
@@ -829,8 +882,9 @@ no_valid:
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header_fixed_string(ngx_http_request_t *r, char * cmd, char * str, u_int str_len)
+ngx_http_memcached_process_header_fixed_string(ngx_http_request_t *r, char * cmd, char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
 {
+    int                      return_code; 
     u_char                    *p;
     ngx_str_t                  line;
     ngx_http_upstream_t       *u;
@@ -858,7 +912,19 @@ found:
 
     p = u->buffer.pos;
     
-    if (ngx_strncmp(p, str, str_len) != 0) {
+    return_code = -1;
+    
+    if (ngx_strncmp(p, str, str_len) == 0) {
+      return_code = 200;
+    }
+    
+    if (other_code != -1) {
+      if (ngx_strncmp(p, str_other_code, str_len_other_code) == 0) {
+        return_code = other_code;
+      }
+    }
+    
+    if (return_code == -1) {
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                     "memcached %s invalid response for key \"%V\"",
                     cmd, &ctx->key);
@@ -870,8 +936,8 @@ found:
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     r->headers_out.content_type_lowcase = NULL;
     
-    u->headers_in.status_n = 200;
-    u->state->status = 200;
+    u->headers_in.status_n = return_code;
+    u->state->status = return_code;
     u->buffer.pos = p;
     u->headers_in.content_length_n = line.len;
     
@@ -882,16 +948,27 @@ found:
 static ngx_int_t
 ngx_http_memcached_process_header_set(ngx_http_request_t *r)
 {
-  return ngx_http_memcached_process_header_fixed_string(r, "set", "STORED", sizeof("STORED") - 1);
+  return ngx_http_memcached_process_header_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, -1, NULL, -1);
 }
 
 static ngx_int_t
 ngx_http_memcached_process_header_flush(ngx_http_request_t *r)
 {
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_header_fixed_string(r, "flush", "OK", sizeof("OK") - 1);
+  rc = ngx_http_memcached_process_header_fixed_string(r, "flush", "OK", sizeof("OK") - 1, -1, NULL, -1);
   if (rc == NGX_OK) {
      ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached flush OK");
+  }
+  return rc;
+}
+
+static ngx_int_t
+ngx_http_memcached_process_header_delete(ngx_http_request_t *r)
+{
+  ngx_int_t rc;
+  rc = ngx_http_memcached_process_header_fixed_string(r, "delete", "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
+  if (rc == NGX_OK) {
+     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached delete OK");
   }
   return rc;
 }
@@ -1122,6 +1199,7 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
 
     conf->hash_keys_with_md5 = NGX_CONF_UNSET;
     conf->allow_put = NGX_CONF_UNSET;
+    conf->allow_delete = NGX_CONF_UNSET;
     conf->stats = NGX_CONF_UNSET;
     conf->flush = NGX_CONF_UNSET;
 
@@ -1182,6 +1260,10 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
       conf->allow_put = 0;
     }
 
+    if (conf->allow_delete == NGX_CONF_UNSET) {
+      conf->allow_delete = 0;
+    }
+
     if (conf->stats == NGX_CONF_UNSET) {
       conf->stats = 0;
     }
@@ -1199,7 +1281,13 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
       conf->method_filter = NGX_HTTP_GET;
     }
     else {
-      conf->method_filter = conf->allow_put ? NGX_HTTP_GET|NGX_HTTP_HEAD|NGX_HTTP_PUT : NGX_HTTP_GET|NGX_HTTP_HEAD;
+      conf->method_filter = NGX_HTTP_GET|NGX_HTTP_HEAD;
+      if (conf->allow_put) {
+        conf->method_filter |= NGX_HTTP_PUT;
+      } 
+      if (conf->allow_delete) {
+        conf->method_filter |= NGX_HTTP_DELETE;
+      } 
     }
 
     return NGX_CONF_OK;
