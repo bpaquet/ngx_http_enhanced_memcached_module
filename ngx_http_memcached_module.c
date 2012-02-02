@@ -32,6 +32,8 @@ typedef struct {
 
 typedef enum ngx_http_memcached_key_status_e {
   UNKNOWN,
+  WAIT_GET_NS,
+  WAIT_INIT_NS,
   READY
 } ngx_http_memcached_key_status_t;  
 
@@ -42,11 +44,13 @@ typedef struct {
     u_char                    *end;
     size_t                     end_len;
     ngx_http_memcached_key_status_t key_status;
+    ngx_str_t                  namespace_key;
     ngx_int_t                 (*when_key_ready)(ngx_http_request_t *r);
 } ngx_http_memcached_ctx_t;
 
 
 static ngx_int_t ngx_http_memcached_compute_key(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_key(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_get(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_set(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_flush(ngx_http_request_t *r);
@@ -370,6 +374,340 @@ ngx_http_memcached_md5(ngx_http_request_t * r, ngx_http_variable_value_t * v) {
     return vv;
 }
 
+static void
+ngx_http_upstream_send_another_request_dummy_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
+{
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http upstream send another request dummy handler");
+}
+
+static ngx_int_t
+ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u);
+  
+static void
+ngx_http_upstream_send_another_request_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
+{
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http upstream send another request handler");
+                   
+    ngx_http_upstream_send_another_request(r, u);
+}
+
+static ngx_int_t
+ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u)
+{
+    ngx_int_t          rc;
+    ngx_connection_t  *c;
+
+    c = u->peer.connection;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                   "http upstream send another request");
+    // 
+    // if (!u->request_sent && ngx_http_upstream_test_connect(c) != NGX_OK) {
+    //     ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_ERROR);
+    //     return;
+    // }
+
+    c->log->action = "sending request to upstream";
+
+    rc = ngx_output_chain(&u->output, u->request_sent ? NULL : u->request_bufs);
+
+    u->request_sent = 1;
+
+    if (rc == NGX_ERROR) {
+        return rc;
+    }
+
+    if (c->write->timer_set) {
+        ngx_del_timer(c->write);
+    }
+
+    if (rc == NGX_AGAIN) {
+       ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                       "ngx_output_chain return NGX_AGAIN");
+        
+        u->write_event_handler = ngx_http_upstream_send_another_request_handler;
+        
+        ngx_add_timer(c->write, u->conf->send_timeout);
+
+        if (ngx_handle_write_event(c->write, u->conf->send_lowat) != NGX_OK) {
+          return NGX_ERROR;
+        }
+
+        return NGX_AGAIN;
+    }
+
+    /* rc == NGX_OK */
+
+    if (c->tcp_nopush == NGX_TCP_NOPUSH_SET) {
+        if (ngx_tcp_push(c->fd) == NGX_ERROR) {
+            ngx_log_error(NGX_LOG_CRIT, c->log, ngx_socket_errno,
+                          ngx_tcp_push_n " failed");
+            return NGX_ERROR;
+        }
+
+        c->tcp_nopush = NGX_TCP_NOPUSH_UNSET;
+    }
+
+    ngx_add_timer(c->read, u->conf->read_timeout);
+
+// #if 1
+//     if (c->read->ready) {
+// 
+//         /* post aio operation */
+// 
+//         /*
+//          * TODO comment
+//          * although we can post aio operation just in the end
+//          * of ngx_http_upstream_connect() CHECK IT !!!
+//          * it's better to do here because we postpone header buffer allocation
+//          */
+// 
+//          return u->process_header(r);
+//     }
+// #endif
+
+    u->write_event_handler = ngx_http_upstream_send_another_request_dummy_handler;
+
+    if (ngx_handle_write_event(c->write, 0) != NGX_OK) {
+        return NGX_ERROR;
+    }
+    
+    return NGX_AGAIN;
+}
+
+static ngx_int_t
+ngx_memcached_initialize_namespace(ngx_http_request_t * r) {
+  ngx_buf_t                      *b;
+  ngx_chain_t                    *cl;
+  ngx_http_memcached_ctx_t       *ctx;
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  
+  cl = ngx_http_memcached_create_buffer(r, 4 + ctx->namespace_key.len + 11);
+  if (cl == NULL) {
+    return NGX_ERROR;
+  }
+  r->upstream->request_bufs = cl;
+  r->upstream->request_sent = 0;
+    
+  b = cl->buf;
+
+  *b->last++ = 's'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
+
+  b->last = ngx_copy(b->last, ctx->namespace_key.data, ctx->namespace_key.len);
+
+  *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' '; *b->last++ = '1';
+  
+  *b->last++ = CR; *b->last++ = LF;
+  
+  *b->last++ = '0';
+  
+  *b->last++ = CR; *b->last++ = LF;
+  
+  ctx->key_status = WAIT_INIT_NS;
+  
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                     "memcached initialize namespace for : \"%V\"", &ctx->namespace_key);
+
+  return ngx_http_upstream_send_another_request(r, r->upstream);
+}
+
+static ngx_int_t
+ngx_memcached_set_key_with_namespace(ngx_http_request_t * r, u_char *k, size_t k_len) {
+  ngx_http_memcached_ctx_t       *ctx;
+  ngx_buf_t                      *b;
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  
+  ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    "memcached compute key from \"%V\" for namespace \"%V\"", &ctx->key, &ctx->namespace_key);
+
+  b = ngx_create_temp_buf(r->pool, ctx->namespace_key.len + ctx->key.len + k_len);
+  b->last = ngx_copy(b->last, ctx->namespace_key.data, ctx->namespace_key.len);
+  b->last = ngx_copy(b->last, ctx->key.data, ctx->key.len);
+  b->last = ngx_copy(b->last, k,k_len);
+  
+  ctx->key.data = b->pos;
+  ctx->key.len = ctx->namespace_key.len + ctx->key.len + k_len;
+  
+  ctx->key_status = READY;
+  
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "http memcached key with namespace: \"%V\"", &ctx->key);
+                 
+  return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_memcached_process_key(ngx_http_request_t * r) {
+  ngx_int_t                   rc;
+  u_char                    *p, *len;
+  ngx_str_t                  line;
+  ngx_http_upstream_t       *u;
+  ngx_http_memcached_ctx_t       *ctx;
+  off_t                      s;
+
+  u = r->upstream;
+
+  for (p = u->buffer.pos; p < u->buffer.last; p++) {
+    if (*p == LF) {
+      goto found;
+    }
+  }
+
+  return NGX_AGAIN;
+
+found:
+
+  *p = '\0';
+
+  line.len = p - u->buffer.pos - 1;
+  line.data = u->buffer.pos;
+
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                     "memcached response when fetching namespace: \"%V\"", &line);
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  
+  if (ctx->key_status == WAIT_GET_NS) {
+    if (ngx_strncmp(line.data, "END", sizeof("END") - 1) == 0) {
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "memcached no namespace found for : \"%V\"", &ctx->namespace_key);
+      
+      u->buffer.pos = p + 1;
+                       
+      return ngx_memcached_initialize_namespace(r);
+    }
+    
+    
+    if (ngx_strncmp(line.data, "VALUE ", sizeof("VALUE ") - 1) == 0) {
+      p = u->buffer.pos;
+
+      p += sizeof("VALUE ") - 1;
+
+      if (ngx_strncmp(p, ctx->namespace_key.data, ctx->namespace_key.len) != 0) {
+          ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "memcached sent invalid key in response \"%V\" "
+                          "for key \"%V\"  while getting namespace",
+                          &line, &ctx->namespace_key);
+
+            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+      }
+
+      p += ctx->namespace_key.len;
+        if (*p++ != ' ') {
+          goto no_valid;
+      }
+
+      /* skip flags */
+
+      while (*p) {
+        if (*p++ == ' ') {
+          goto length;
+        }
+      }
+
+      goto no_valid;
+
+length:
+
+      len = p;
+
+      while (*p && *p++ != CR) { /* void */ }
+
+      s = ngx_atoof(len, p - len - 1);
+
+      p ++;
+
+      rc = ngx_memcached_set_key_with_namespace(r, p, s);
+      if (rc != NGX_OK) {
+        return rc;
+      };
+      
+      p += s + 2 + 3 + 2;
+      u->buffer.pos = p;
+      
+      rc = ctx->when_key_ready(r);
+      if (rc != NGX_OK) {
+        return rc;
+      };
+
+      r->upstream->request_sent = 0;
+
+      return ngx_http_upstream_send_another_request(r, r->upstream);
+    }
+  }
+  
+  if (ctx->key_status == WAIT_INIT_NS) {
+    if (ngx_strncmp(line.data, "STORED", sizeof("STORED") - 1) == 0) {
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "memcached namespace initialized for : \"%V\"", &ctx->namespace_key);
+
+      u->buffer.pos = p + 1;
+      rc = ngx_memcached_set_key_with_namespace(r, (u_char *) "0", 1);
+      if (rc != NGX_OK) {
+        return rc;
+      };
+      
+      rc = ctx->when_key_ready(r);
+      if (rc != NGX_OK) {
+        return rc;
+      };
+
+      r->upstream->request_sent = 0;
+
+      return ngx_http_upstream_send_another_request(r, r->upstream);
+    }
+  }
+                     
+  return NGX_ERROR;
+
+no_valid:
+
+  ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    "memcached sent invalid response while getting namespace: \"%V\"", &line);
+
+  return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+}
+
+static ngx_int_t
+ngx_http_memcached_get_namespace(ngx_http_request_t * r, ngx_http_variable_value_t *namespace) {
+  ngx_http_memcached_ctx_t       *ctx;
+  ngx_buf_t                      *b;
+  ngx_chain_t                    *cl;
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  
+  ctx->key_status = WAIT_GET_NS;
+  
+  cl = ngx_http_memcached_create_buffer(r, 4 + 4 + namespace->len + 2);
+  if (cl == NULL) {
+    return NGX_ERROR;
+  }
+  r->upstream->request_bufs = cl;
+  
+  b = cl->buf;
+
+  *b->last++ = 'g'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
+
+  ctx->namespace_key.data = b->last;
+
+  *b->last++ = '_'; *b->last++ = '_'; *b->last++ = 'n'; *b->last++ = 's'; *b->last++ = '_'; *b->last++ = '_';
+
+  b->last = ngx_copy(b->last, namespace->data, namespace->len);
+
+  ctx->namespace_key.len = b->last - ctx->namespace_key.data;
+  
+  *b->last++ = CR; *b->last++ = LF;
+  
+  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                 "http memcached fetching namespace for : \"%V\"", &ctx->namespace_key);
+  
+  return NGX_OK;
+}
+
 static ngx_int_t
 ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     size_t                          len;
@@ -378,7 +716,6 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     ngx_http_memcached_loc_conf_t  *mlcf;
     ngx_http_variable_value_t      *vv;
     ngx_buf_t                      *b;
-    ngx_chain_t                    *cl;
     
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
 
@@ -404,11 +741,10 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
 
     len = vv->len + escape;
 
-    cl = ngx_http_memcached_create_buffer(r, len);
-    if (cl == NULL) {
+    b = ngx_create_temp_buf(r->pool, len);
+    if (b == NULL) {
       return NGX_ERROR;
     }
-    b = cl->buf;
     
     ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
 
@@ -425,9 +761,15 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http memcached key: \"%V\"", &ctx->key);
 
-    ctx->key_status = READY;
-    
-    return ctx->when_key_ready(r);
+    vv = ngx_http_get_indexed_variable(r, mlcf->key_namespace_index);
+
+    if (vv == NULL || vv->not_found || vv->len == 0) {
+      ctx->key_status = READY;
+      return ctx->when_key_ready(r);
+    }
+    else {
+      return ngx_http_memcached_get_namespace(r, vv);
+    }
 }
 
 static ngx_int_t
@@ -443,11 +785,12 @@ ngx_http_memcached_send_request_get(ngx_http_request_t *r)
     if (cl == NULL) {
       return NGX_ERROR;
     }
+    
+    r->upstream->request_bufs = cl;
+    
     b = cl->buf;
 
     *b->last++ = 'g'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
-    
-    r->upstream->request_bufs = cl;
     
     b->last = ngx_copy(b->last, ctx->key.data, ctx->key.len);
 
@@ -677,6 +1020,12 @@ ngx_http_memcached_process_request_get(ngx_http_request_t *r)
     ngx_http_upstream_t       *u;
     ngx_http_memcached_ctx_t  *ctx;
 
+    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+
+    if (ctx->key_status != READY) {
+      return ngx_http_memcached_process_key(r);
+    }
+
     u = r->upstream;
 
     for (p = u->buffer.pos; p < u->buffer.last; p++) {
@@ -699,8 +1048,6 @@ found:
 
     p = u->buffer.pos;
 
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
-    
     if (ngx_strncmp(p, "VALUE ", sizeof("VALUE ") - 1) == 0) {
 
         p += sizeof("VALUE ") - 1;
@@ -973,6 +1320,14 @@ found:
 static ngx_int_t
 ngx_http_memcached_process_request_set(ngx_http_request_t *r)
 {
+  ngx_http_memcached_ctx_t  *ctx;
+  
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+
+  if (ctx->key_status != READY) {
+    return ngx_http_memcached_process_key(r);
+  }
+
   return ngx_http_memcached_process_request_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
 }
 
@@ -990,6 +1345,14 @@ ngx_http_memcached_process_request_flush(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_memcached_process_request_delete(ngx_http_request_t *r)
 {
+  ngx_http_memcached_ctx_t  *ctx;
+
+  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+
+  if (ctx->key_status != READY) {
+   return ngx_http_memcached_process_key(r);
+  }
+   
   ngx_int_t rc;
   rc = ngx_http_memcached_process_request_fixed_string(r, "delete", "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
   if (rc == NGX_OK) {
