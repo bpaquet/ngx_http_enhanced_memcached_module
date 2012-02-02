@@ -567,8 +567,19 @@ found:
           
           p += sizeof(EXTRACT_HEADERS) - 1;
           u->headers_in.content_length_n -= sizeof(EXTRACT_HEADERS) - 1;
-          
+
           while (1) {
+            if (u->headers_in.content_length_n < 2) {
+              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                            "unable to read http headers in memcached value : end of headers not found");
+              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            }
+            if (ngx_strncmp(p, "\r\n", 2) == 0) {
+              p += 2;
+              u->headers_in.content_length_n -= 2;
+              break;
+            }
+              
             delim = (u_char *) ngx_strstr(p, ": ");
             if (delim == NULL) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -657,17 +668,6 @@ found:
               if (ngx_strcmp(name, "Etag") == 0) {
                 r->headers_out.etag = h;
               }
-            }
-            
-            if (u->headers_in.content_length_n < 2) {
-              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "unable to read http headers in memcached value : end of headers not found");
-              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
-            }
-            if (ngx_strncmp(p, "\r\n", 2) == 0) {
-              p += 2;
-              u->headers_in.content_length_n -= 2;
-              break;
             }
           }
         }
