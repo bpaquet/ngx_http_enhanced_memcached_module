@@ -699,6 +699,7 @@ found:
             if (u->headers_in.content_length_n < 2) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value : end of headers not found");
+              u->headers_in.content_length_n = 0;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             if (ngx_strncmp(p, "\r\n", 2) == 0) {
@@ -711,6 +712,7 @@ found:
             if (delim == NULL) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value");
+              u->headers_in.content_length_n = 0;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             name_len = delim - p;
@@ -726,6 +728,7 @@ found:
             if (delim == NULL) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value");
+              u->headers_in.content_length_n = 0;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             value_len = delim - p;
