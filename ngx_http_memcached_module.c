@@ -354,9 +354,127 @@ found:
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
         }
 
+        p ++;
+        
+#define EXTRACT_HEADERS "EXTRACT_HEADERS\r\n"
+
+        if (ngx_strncmp(p, EXTRACT_HEADERS, sizeof(EXTRACT_HEADERS) - 1) == 0) {
+          u_char *delim, *name, *value;
+          int name_len, value_len;
+          
+          ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "extracting headers from memcached value");
+          
+          p += sizeof(EXTRACT_HEADERS) - 1;
+          u->headers_in.content_length_n -= sizeof(EXTRACT_HEADERS) - 1;
+          
+          while (true) {
+            delim = (u_char *) ngx_strstr(p, ": ");
+            if (delim == NULL) {
+              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                            "unable to read http headers in memcached value");
+              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            }
+            name_len = delim - p;
+            name = (u_char *) ngx_palloc(r->pool, name_len + 1);
+            if (name == NULL) {
+              return NGX_ERROR;
+            }
+            ngx_memcpy(name, p, name_len);
+            name[name_len] = 0;
+            p = delim + 2;
+            u->headers_in.content_length_n -= name_len + 2;
+            delim = (u_char *) ngx_strstr(p, "\r\n");
+            if (delim == NULL) {
+              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                            "unable to read http headers in memcached value");
+              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            }
+            value_len = delim - p;
+            value = (u_char *) ngx_palloc(r->pool, value_len + 1);
+            if (value == NULL) {
+              return NGX_ERROR;
+            }
+            ngx_memcpy(value, p, value_len);
+            value[value_len] = 0;
+            p = delim + 2;
+            u->headers_in.content_length_n -= value_len + 2;
+            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "http header read in memcached  : %s: %s ", name, value);
+              
+            if (ngx_strcmp(name, "Content-Type") == 0) {
+              r->headers_out.content_type.data = value;
+              r->headers_out.content_type.len = value_len;
+              r->headers_out.content_type_len = value_len;
+              r->headers_out.content_type_lowcase = NULL;
+            }
+            else {
+              ngx_table_elt_t *h = ngx_list_push(&r->headers_out.headers);
+              if (h == NULL) {
+                return NGX_ERROR;
+              }
+              
+              h->key.data = name;
+              h->key.len = name_len;
+              
+              h->value.data = value;
+              h->value.len = value_len;
+              h->hash = 1;
+              
+              if (ngx_strcmp(name, "Server") == 0) {
+                r->headers_out.server = h;
+              }
+              if (ngx_strcmp(name, "Date") == 0) {
+                r->headers_out.date = h;
+              }
+              if (ngx_strcmp(name, "Content-Length") == 0) {
+                r->headers_out.content_length = h;
+              }
+              if (ngx_strcmp(name, "Content-Encoding") == 0) {
+                r->headers_out.content_encoding = h;
+              }
+              if (ngx_strcmp(name, "Location") == 0) {
+                r->headers_out.location = h;
+              }
+              if (ngx_strcmp(name, "Refresh") == 0) {
+                r->headers_out.refresh = h;
+              }
+              if (ngx_strcmp(name, "Last-Modified") == 0) {
+                r->headers_out.last_modified = h;
+              }
+              if (ngx_strcmp(name, "Content-Range") == 0) {
+                r->headers_out.content_range = h;
+              }
+              if (ngx_strcmp(name, "Accept-Ranges") == 0) {
+                r->headers_out.accept_ranges = h;
+              }
+              if (ngx_strcmp(name, "WWW-Authenticate") == 0) {
+                r->headers_out.www_authenticate = h;
+              }
+              if (ngx_strcmp(name, "Expires") == 0) {
+                r->headers_out.expires = h;
+              }
+              if (ngx_strcmp(name, "Etag") == 0) {
+                r->headers_out.etag = h;
+              }
+            }
+            
+            if (u->headers_in.content_length_n < 2) {
+              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "unable to read http headers in memcached value : end of headers not found");
+              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            }
+            if (ngx_strncmp(p, "\r\n", 2) == 0) {
+              p += 2;
+              u->headers_in.content_length_n -= 2;
+              break;
+            }
+          }
+        }
+
         u->headers_in.status_n = 200;
         u->state->status = 200;
-        u->buffer.pos = p + 1;
+        u->buffer.pos = p;
 
         return NGX_OK;
     }
