@@ -733,7 +733,7 @@ found:
 
         goto no_valid;
 
-    length:
+length:
 
         len = p;
 
@@ -753,7 +753,7 @@ found:
 #define EXTRACT_HEADERS "EXTRACT_HEADERS\r\n"
 
         if (ngx_strncmp(p, EXTRACT_HEADERS, sizeof(EXTRACT_HEADERS) - 1) == 0) {
-          u_char *delim, *name, *value;
+          u_char *search, *name, *value;
           int name_len, value_len;
           
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -774,39 +774,53 @@ found:
               u->headers_in.content_length_n -= 2;
               break;
             }
-              
-            delim = (u_char *) ngx_strstr(p, ": ");
-            if (delim == NULL || delim > u->buffer.last) {
-              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                            "unable to read http headers in memcached value");
-              u->headers_in.content_length_n = -1;
-              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            
+            for(search = p; search < u->buffer.last - 1; search ++) {
+              if (*search == ':' && *(search + 1) == ' ') {
+                goto colon_found;
+              }
             }
-            name_len = delim - p;
+            
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "unable to read http headers in memcached value : not found :");
+            u->headers_in.content_length_n = -1;
+            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            
+colon_found:
+
+            name_len = search - p;
             name = (u_char *) ngx_palloc(r->pool, name_len + 1);
-            if (name == NULL || delim > u->buffer.last) {
+            if (name == NULL) {
               return NGX_ERROR;
             }
             ngx_memcpy(name, p, name_len);
             name[name_len] = 0;
-            p = delim + 2;
+            p = search + 2;
             u->headers_in.content_length_n -= name_len + 2;
-            delim = (u_char *) ngx_strstr(p, "\r\n");
-            if (delim == NULL || delim > u->buffer.last) {
-              ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                            "unable to read http headers in memcached value");
-              u->headers_in.content_length_n = -1;
-              return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            
+            for(search = p; search < u->buffer.last - 1; search ++) {
+              if (*search == CR && *(search + 1) == LF) {
+                goto end_of_header_found;
+              }
             }
-            value_len = delim - p;
+            
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "unable to read http headers in memcached value");
+            u->headers_in.content_length_n = -1;
+            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            
+end_of_header_found:
+
+            value_len = search - p;
             value = (u_char *) ngx_palloc(r->pool, value_len + 1);
             if (value == NULL) {
               return NGX_ERROR;
             }
             ngx_memcpy(value, p, value_len);
             value[value_len] = 0;
-            p = delim + 2;
+            p = search + 2;
             u->headers_in.content_length_n -= value_len + 2;
+            
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "http header read in memcached : %s: %s ", name, value);
               
