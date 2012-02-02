@@ -187,6 +187,7 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     ngx_http_upstream_t            *u;
     ngx_http_memcached_ctx_t       *ctx;
     ngx_http_memcached_loc_conf_t  *mlcf;
+    ngx_flag_t                      read_body;
 
     if (ngx_http_set_content_type(r) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -226,23 +227,30 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     u->input_filter = ngx_http_memcached_filter;
     u->input_filter_ctx = ctx;
 
+    read_body = 0;
+    
     if (mlcf->flush) {
-      r->main->count++;
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
       ctx->end = ngx_http_memcached_crlf;
       u->create_request = ngx_http_memcached_create_request_flush;
       u->process_header = ngx_http_memcached_process_header_flush;
-      rc = ngx_http_discard_request_body(r);
-      if (rc != NGX_OK) {
-        return rc;
-      }
-      ngx_http_upstream_init(r);
     }
     else if(r->method & (NGX_HTTP_PUT)) {
+      read_body = 1;
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
       ctx->end = ngx_http_memcached_crlf;
       u->create_request = ngx_http_memcached_create_request_set;
       u->process_header = ngx_http_memcached_process_header_set;      
+     
+    }
+    else {
+      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
+      ctx->end = ngx_http_memcached_end;
+      u->create_request = ngx_http_memcached_create_request;
+      u->process_header = ngx_http_memcached_process_header;
+    }
+    
+    if (read_body) {
       rc = ngx_http_read_client_request_body(r, ngx_http_upstream_init);
       if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
         return rc;
@@ -250,17 +258,13 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     }
     else {
       r->main->count++;
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
-      ctx->end = ngx_http_memcached_end;
-      u->create_request = ngx_http_memcached_create_request;
-      u->process_header = ngx_http_memcached_process_header;
       rc = ngx_http_discard_request_body(r);
       if (rc != NGX_OK) {
         return rc;
       }
       ngx_http_upstream_init(r);
     }
-
+ 
     return NGX_DONE;
 }
 
