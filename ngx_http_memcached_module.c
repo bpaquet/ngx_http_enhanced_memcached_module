@@ -53,11 +53,11 @@ static ngx_int_t ngx_http_memcached_send_request_flush(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_stats(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_send_request_delete(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_reinit_request(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_header(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_header_set(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_header_flush(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_header_stats(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_header_delete(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_get(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_set(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_flush(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_stats(ngx_http_request_t *r);
+static ngx_int_t ngx_http_memcached_process_request_delete(ngx_http_request_t *r);
 static ngx_int_t ngx_http_memcached_filter_init(void *data);
 static ngx_int_t ngx_http_memcached_filter(void *data, ssize_t bytes);
 static void ngx_http_memcached_abort_request(ngx_http_request_t *r);
@@ -215,7 +215,6 @@ static u_char  ngx_http_memcached_end[] = CRLF "END" CRLF;
 #define NGX_HTTP_MEMCACHED_CRLF   (sizeof(ngx_http_memcached_crlf) - 1)
 static u_char  ngx_http_memcached_crlf[] = CRLF;
 
-
 static ngx_int_t
 ngx_http_memcached_handler(ngx_http_request_t *r)
 {
@@ -269,13 +268,13 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
       ctx->end = ngx_http_memcached_crlf;
       u->create_request = ngx_http_memcached_send_request_flush;
-      u->process_header = ngx_http_memcached_process_header_flush;
+      u->process_header = ngx_http_memcached_process_request_flush;
     }
     else if (mlcf->stats) {
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
       ctx->end = ngx_http_memcached_end;
       u->create_request = ngx_http_memcached_send_request_stats;
-      u->process_header = ngx_http_memcached_process_header_stats;
+      u->process_header = ngx_http_memcached_process_request_stats;
     }
     else if(r->method & (NGX_HTTP_PUT)) {
       read_body = 1;
@@ -284,7 +283,7 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->key_status = UNKNOWN;
       ctx->when_key_ready = ngx_http_memcached_send_request_set;
       u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_header_set;      
+      u->process_header = ngx_http_memcached_process_request_set;      
     }
     else if(r->method & (NGX_HTTP_DELETE)) {
       read_body = 1;
@@ -293,7 +292,7 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->key_status = UNKNOWN;
       ctx->when_key_ready = ngx_http_memcached_send_request_delete;
       u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_header_delete;      
+      u->process_header = ngx_http_memcached_process_request_delete;      
     }
     else {
       ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
@@ -301,7 +300,7 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
       ctx->key_status = UNKNOWN;
       ctx->when_key_ready = ngx_http_memcached_send_request_get;
       u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_header;
+      u->process_header = ngx_http_memcached_process_request_get;
     }
     
     if (read_body) {
@@ -671,7 +670,7 @@ ngx_http_memcached_reinit_request(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header(ngx_http_request_t *r)
+ngx_http_memcached_process_request_get(ngx_http_request_t *r)
 {
     u_char                    *p, *len;
     ngx_str_t                  line;
@@ -908,7 +907,7 @@ no_valid:
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header_fixed_string(ngx_http_request_t *r, char * cmd, char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
+ngx_http_memcached_process_request_fixed_string(ngx_http_request_t *r, char * cmd, char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
 {
     int                      return_code; 
     u_char                    *p;
@@ -972,16 +971,16 @@ found:
 
 
 static ngx_int_t
-ngx_http_memcached_process_header_set(ngx_http_request_t *r)
+ngx_http_memcached_process_request_set(ngx_http_request_t *r)
 {
-  return ngx_http_memcached_process_header_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
+  return ngx_http_memcached_process_request_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header_flush(ngx_http_request_t *r)
+ngx_http_memcached_process_request_flush(ngx_http_request_t *r)
 {
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_header_fixed_string(r, "flush", "OK", sizeof("OK") - 1, -1, NULL, -1);
+  rc = ngx_http_memcached_process_request_fixed_string(r, "flush", "OK", sizeof("OK") - 1, -1, NULL, -1);
   if (rc == NGX_OK) {
      ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached flush OK");
   }
@@ -989,10 +988,10 @@ ngx_http_memcached_process_header_flush(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header_delete(ngx_http_request_t *r)
+ngx_http_memcached_process_request_delete(ngx_http_request_t *r)
 {
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_header_fixed_string(r, "delete", "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
+  rc = ngx_http_memcached_process_request_fixed_string(r, "delete", "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
   if (rc == NGX_OK) {
      ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached delete OK");
   }
@@ -1000,7 +999,7 @@ ngx_http_memcached_process_header_delete(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_process_header_stats(ngx_http_request_t *r)
+ngx_http_memcached_process_request_stats(ngx_http_request_t *r)
 {
     u_char                    *p, *last_p;
     ngx_str_t                  line;
