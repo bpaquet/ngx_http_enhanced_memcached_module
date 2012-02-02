@@ -430,6 +430,7 @@ ngx_http_memcached_create_request(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_memcached_create_request_set(ngx_http_request_t *r)
 {
+    size_t                          expire = 0;
     uintptr_t                       bytes_len;
     off_t                           bytes;
     ngx_buf_t                      *b;
@@ -452,14 +453,26 @@ ngx_http_memcached_create_request_set(ngx_http_request_t *r)
     }
     cl = cl->next;
 
-    cl->next = ngx_http_memcached_create_buffer(r, 5);
+    cl->next = ngx_http_memcached_create_buffer(r, 3);
     cl = cl->next;
     if (cl == NULL) {
       return NGX_ERROR;
     }
     b = cl->buf;
     
-    *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' ';
+    *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' ';
+    
+    bytes_len = ngx_snprintf(bytes_buf, sizeof(bytes_buf), "%O", expire) - bytes_buf;
+
+    cl->next = ngx_http_memcached_create_buffer(r, bytes_len + 1);
+    cl = cl->next;
+    if (cl == NULL) {
+      return NGX_ERROR;
+    }
+    b = cl->buf;
+    
+    b->last = ngx_copy(b->last, bytes_buf, bytes_len);
+    *b->last++ = ' ';
     
     bytes = 0;
     for (in = r->request_body->bufs; in; in = in->next) {
