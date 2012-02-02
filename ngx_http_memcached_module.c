@@ -766,7 +766,7 @@ found:
             if (u->headers_in.content_length_n < 2) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value : end of headers not found");
-              u->headers_in.content_length_n = 0;
+              u->headers_in.content_length_n = -1;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             if (ngx_strncmp(p, "\r\n", 2) == 0) {
@@ -776,15 +776,15 @@ found:
             }
               
             delim = (u_char *) ngx_strstr(p, ": ");
-            if (delim == NULL) {
+            if (delim == NULL || delim > u->buffer.last) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value");
-              u->headers_in.content_length_n = 0;
+              u->headers_in.content_length_n = -1;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             name_len = delim - p;
             name = (u_char *) ngx_palloc(r->pool, name_len + 1);
-            if (name == NULL) {
+            if (name == NULL || delim > u->buffer.last) {
               return NGX_ERROR;
             }
             ngx_memcpy(name, p, name_len);
@@ -792,10 +792,10 @@ found:
             p = delim + 2;
             u->headers_in.content_length_n -= name_len + 2;
             delim = (u_char *) ngx_strstr(p, "\r\n");
-            if (delim == NULL) {
+            if (delim == NULL || delim > u->buffer.last) {
               ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                             "unable to read http headers in memcached value");
-              u->headers_in.content_length_n = 0;
+              u->headers_in.content_length_n = -1;
               return NGX_HTTP_UPSTREAM_INVALID_HEADER;
             }
             value_len = delim - p;
@@ -808,7 +808,7 @@ found:
             p = delim + 2;
             u->headers_in.content_length_n -= value_len + 2;
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "http header read in memcached  : %s: %s ", name, value);
+                           "http header read in memcached : %s: %s ", name, value);
               
             if (ngx_strcmp(name, "Content-Type") == 0) {
               r->headers_out.content_type.data = value;
