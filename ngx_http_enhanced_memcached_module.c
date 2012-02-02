@@ -29,15 +29,15 @@ typedef struct {
     ngx_flag_t                 flush;
     ngx_flag_t                 flush_namespace;
     ngx_uint_t                 method_filter;
-} ngx_http_memcached_loc_conf_t;
+} ngx_http_enhanced_memcached_loc_conf_t;
 
 
-typedef enum ngx_http_memcached_key_status_e {
+typedef enum ngx_http_enhanced_memcached_key_status_e {
   UNKNOWN,
   WAIT_GET_NS,
   WAIT_INIT_NS,
   READY
-} ngx_http_memcached_key_status_t;  
+} ngx_http_enhanced_memcached_key_status_t;  
 
 typedef struct {
     size_t                     rest;
@@ -45,43 +45,43 @@ typedef struct {
     ngx_str_t                  key;
     u_char                    *end;
     size_t                     end_len;
-    ngx_http_memcached_key_status_t key_status;
+    ngx_http_enhanced_memcached_key_status_t key_status;
     ngx_str_t                  namespace_key;
     ngx_str_t                  namespace_value;
     ngx_int_t                 (*when_key_ready)(ngx_http_request_t *r);
-} ngx_http_memcached_ctx_t;
+} ngx_http_enhanced_memcached_ctx_t;
 
 
-static ngx_int_t ngx_http_memcached_compute_key(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_key(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_get(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_set(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_flush(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_stats(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_delete(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_send_request_incr_ns(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_reinit_request(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_get(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_set(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_flush(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_stats(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_delete(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_process_request_incr_ns(ngx_http_request_t *r);
-static ngx_int_t ngx_http_memcached_filter_init(void *data);
-static ngx_int_t ngx_http_memcached_filter(void *data, ssize_t bytes);
-static void ngx_http_memcached_abort_request(ngx_http_request_t *r);
-static void ngx_http_memcached_finalize_request(ngx_http_request_t *r,
+static ngx_int_t ngx_http_enhanced_memcached_compute_key(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_key(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_get(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_set(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_flush(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_stats(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_delete(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_send_request_incr_ns(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_reinit_request(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_get(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_set(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_flush(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_stats(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_delete(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_process_request_incr_ns(ngx_http_request_t *r);
+static ngx_int_t ngx_http_enhanced_memcached_filter_init(void *data);
+static ngx_int_t ngx_http_enhanced_memcached_filter(void *data, ssize_t bytes);
+static void ngx_http_enhanced_memcached_abort_request(ngx_http_request_t *r);
+static void ngx_http_enhanced_memcached_finalize_request(ngx_http_request_t *r,
     ngx_int_t rc);
 
-static ngx_int_t ngx_http_memcached_init(ngx_conf_t *cf);
-static void *ngx_http_memcached_create_loc_conf(ngx_conf_t *cf);
-static char *ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf,
+static ngx_int_t ngx_http_enhanced_memcached_init(ngx_conf_t *cf);
+static void *ngx_http_enhanced_memcached_create_loc_conf(ngx_conf_t *cf);
+static char *ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf,
     void *parent, void *child);
 
-static char *ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd,
+static char *ngx_http_enhanced_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 
-static ngx_conf_bitmask_t  ngx_http_memcached_next_upstream_masks[] = {
+static ngx_conf_bitmask_t  ngx_http_enhanced_memcached_next_upstream_masks[] = {
     { ngx_string("error"), NGX_HTTP_UPSTREAM_FT_ERROR },
     { ngx_string("timeout"), NGX_HTTP_UPSTREAM_FT_TIMEOUT },
     { ngx_string("invalid_response"), NGX_HTTP_UPSTREAM_FT_INVALID_HEADER },
@@ -90,106 +90,106 @@ static ngx_conf_bitmask_t  ngx_http_memcached_next_upstream_masks[] = {
     { ngx_null_string, 0 }
 };
 
-static ngx_command_t  ngx_http_memcached_commands[] = {
+static ngx_command_t  ngx_http_enhanced_memcached_commands[] = {
 
-    { ngx_string("memcached_pass"),
+    { ngx_string("enhanced_memcached_pass"),
       NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
-      ngx_http_memcached_pass,
+      ngx_http_enhanced_memcached_pass,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
-    { ngx_string("memcached_hash_keys_with_md5"),
+    { ngx_string("enhanced_memcached_hash_keys_with_md5"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, hash_keys_with_md5),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, hash_keys_with_md5),
       NULL },
 
-    { ngx_string("memcached_allow_put"),
+    { ngx_string("enhanced_memcached_allow_put"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, allow_put),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, allow_put),
       NULL },
 
-    { ngx_string("memcached_allow_delete"),
+    { ngx_string("enhanced_memcached_allow_delete"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, allow_delete),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, allow_delete),
       NULL },
 
-    { ngx_string("memcached_stats"),
+    { ngx_string("enhanced_memcached_stats"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, stats),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, stats),
       NULL },
 
-    { ngx_string("memcached_flush"),
+    { ngx_string("enhanced_memcached_flush"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, flush),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, flush),
       NULL },
     
-    { ngx_string("memcached_flush_namespace"),
+    { ngx_string("enhanced_memcached_flush_namespace"),
       NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, flush_namespace),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, flush_namespace),
       NULL },
     
-    { ngx_string("memcached_bind"),
+    { ngx_string("enhanced_memcached_bind"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_upstream_bind_set_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.local),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.local),
       NULL },
 
-    { ngx_string("memcached_connect_timeout"),
+    { ngx_string("enhanced_memcached_connect_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.connect_timeout),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.connect_timeout),
       NULL },
 
-    { ngx_string("memcached_send_timeout"),
+    { ngx_string("enhanced_memcached_send_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.send_timeout),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.send_timeout),
       NULL },
 
-    { ngx_string("memcached_buffer_size"),
+    { ngx_string("enhanced_memcached_buffer_size"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_size_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.buffer_size),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.buffer_size),
       NULL },
 
-    { ngx_string("memcached_read_timeout"),
+    { ngx_string("enhanced_memcached_read_timeout"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.read_timeout),
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.read_timeout),
       NULL },
 
-    { ngx_string("memcached_next_upstream"),
+    { ngx_string("enhanced_memcached_next_upstream"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_memcached_loc_conf_t, upstream.next_upstream),
-      &ngx_http_memcached_next_upstream_masks },
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.next_upstream),
+      &ngx_http_enhanced_memcached_next_upstream_masks },
 
       ngx_null_command
 };
 
 
-static ngx_http_module_t  ngx_http_memcached_module_ctx = {
+static ngx_http_module_t  ngx_http_enhanced_memcached_module_ctx = {
     NULL,                                  /* preconfiguration */
-    ngx_http_memcached_init,               /* postconfiguration */
+    ngx_http_enhanced_memcached_init,               /* postconfiguration */
 
     NULL,                                  /* create main configuration */
     NULL,                                  /* init main configuration */
@@ -197,15 +197,15 @@ static ngx_http_module_t  ngx_http_memcached_module_ctx = {
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
 
-    ngx_http_memcached_create_loc_conf,    /* create location configration */
-    ngx_http_memcached_merge_loc_conf      /* merge location configration */
+    ngx_http_enhanced_memcached_create_loc_conf,    /* create location configration */
+    ngx_http_enhanced_memcached_merge_loc_conf      /* merge location configration */
 };
 
 
-ngx_module_t  ngx_http_memcached_module = {
+ngx_module_t  ngx_http_enhanced_memcached_module = {
     NGX_MODULE_V1,
-    &ngx_http_memcached_module_ctx,        /* module context */
-    ngx_http_memcached_commands,           /* module directives */
+    &ngx_http_enhanced_memcached_module_ctx,        /* module context */
+    ngx_http_enhanced_memcached_commands,           /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
@@ -217,27 +217,27 @@ ngx_module_t  ngx_http_memcached_module = {
     NGX_MODULE_V1_PADDING
 };
 
-static ngx_str_t  ngx_http_memcached_key = ngx_string("memcached_key");
-static ngx_str_t  ngx_http_memcached_expire = ngx_string("memcached_expire");
-static ngx_str_t  ngx_http_memcached_use_add = ngx_string("memcached_use_add");
-static ngx_str_t  ngx_http_memcached_key_namespace = ngx_string("memcached_key_namespace");
+static ngx_str_t  ngx_http_enhanced_memcached_key = ngx_string("enhanced_memcached_key");
+static ngx_str_t  ngx_http_enhanced_memcached_expire = ngx_string("enhanced_memcached_expire");
+static ngx_str_t  ngx_http_enhanced_memcached_use_add = ngx_string("enhanced_memcached_use_add");
+static ngx_str_t  ngx_http_enhanced_memcached_key_namespace = ngx_string("enhanced_memcached_key_namespace");
 
-#define NGX_HTTP_MEMCACHED_END   (sizeof(ngx_http_memcached_end) - 1)
-static u_char  ngx_http_memcached_end[] = CRLF "END" CRLF;
+#define NGX_HTTP_ENHANCED_MEMCACHED_END   (sizeof(ngx_http_enhanced_memcached_end) - 1)
+static u_char  ngx_http_enhanced_memcached_end[] = CRLF "END" CRLF;
 
-#define NGX_HTTP_MEMCACHED_CRLF   (sizeof(ngx_http_memcached_crlf) - 1)
-static u_char  ngx_http_memcached_crlf[] = CRLF;
+#define NGX_HTTP_ENHANCED_MEMCACHED_CRLF   (sizeof(ngx_http_enhanced_memcached_crlf) - 1)
+static u_char  ngx_http_enhanced_memcached_crlf[] = CRLF;
 
-#define NGX_HTTP_MEMCACHED_EXTRACT_HEADERS  (sizeof(ngx_http_memcached_extract_headers) - 1)
-static u_char ngx_http_memcached_extract_headers[] = "EXTRACT_HEADERS" CRLF;
+#define NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS  (sizeof(ngx_http_enhanced_memcached_extract_headers) - 1)
+static u_char ngx_http_enhanced_memcached_extract_headers[] = "EXTRACT_HEADERS" CRLF;
 
 static ngx_int_t
-ngx_http_memcached_handler(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
 {
     ngx_int_t                       rc;
     ngx_http_upstream_t            *u;
-    ngx_http_memcached_ctx_t       *ctx;
-    ngx_http_memcached_loc_conf_t  *mlcf;
+    ngx_http_enhanced_memcached_ctx_t       *ctx;
+    ngx_http_enhanced_memcached_loc_conf_t  *mlcf;
     ngx_flag_t                      read_body;
 
     if (ngx_http_set_content_type(r) != NGX_OK) {
@@ -251,9 +251,9 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
     u = r->upstream;
 
     ngx_str_set(&u->schema, "memcached://");
-    u->output.tag = (ngx_buf_tag_t) &ngx_http_memcached_module;
+    u->output.tag = (ngx_buf_tag_t) &ngx_http_enhanced_memcached_module;
 
-    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_enhanced_memcached_module);
 
     if (!(r->method & mlcf->method_filter)) {
         return NGX_HTTP_NOT_ALLOWED;
@@ -261,70 +261,70 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
 
     u->conf = &mlcf->upstream;
 
-    u->reinit_request = ngx_http_memcached_reinit_request;
-    u->abort_request = ngx_http_memcached_abort_request;
-    u->finalize_request = ngx_http_memcached_finalize_request;
+    u->reinit_request = ngx_http_enhanced_memcached_reinit_request;
+    u->abort_request = ngx_http_enhanced_memcached_abort_request;
+    u->finalize_request = ngx_http_enhanced_memcached_finalize_request;
 
-    ctx = ngx_palloc(r->pool, sizeof(ngx_http_memcached_ctx_t));
+    ctx = ngx_palloc(r->pool, sizeof(ngx_http_enhanced_memcached_ctx_t));
     if (ctx == NULL) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx->request = r;
 
-    ngx_http_set_ctx(r, ctx, ngx_http_memcached_module);
+    ngx_http_set_ctx(r, ctx, ngx_http_enhanced_memcached_module);
 
-    u->input_filter_init = ngx_http_memcached_filter_init;
-    u->input_filter = ngx_http_memcached_filter;
+    u->input_filter_init = ngx_http_enhanced_memcached_filter_init;
+    u->input_filter = ngx_http_enhanced_memcached_filter;
     u->input_filter_ctx = ctx;
 
     read_body = 0;
     
     if (mlcf->flush) {
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
-      ctx->end = ngx_http_memcached_crlf;
-      u->create_request = ngx_http_memcached_send_request_flush;
-      u->process_header = ngx_http_memcached_process_request_flush;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_CRLF;
+      ctx->end = ngx_http_enhanced_memcached_crlf;
+      u->create_request = ngx_http_enhanced_memcached_send_request_flush;
+      u->process_header = ngx_http_enhanced_memcached_process_request_flush;
     }
     else if (mlcf->stats) {
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
-      ctx->end = ngx_http_memcached_end;
-      u->create_request = ngx_http_memcached_send_request_stats;
-      u->process_header = ngx_http_memcached_process_request_stats;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_END;
+      ctx->end = ngx_http_enhanced_memcached_end;
+      u->create_request = ngx_http_enhanced_memcached_send_request_stats;
+      u->process_header = ngx_http_enhanced_memcached_process_request_stats;
     }
     else if (mlcf->flush_namespace) {
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
-      ctx->end = ngx_http_memcached_crlf;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_CRLF;
+      ctx->end = ngx_http_enhanced_memcached_crlf;
       ctx->key_status = UNKNOWN;
-      ctx->when_key_ready = ngx_http_memcached_send_request_incr_ns;
-      u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_request_incr_ns;
+      ctx->when_key_ready = ngx_http_enhanced_memcached_send_request_incr_ns;
+      u->create_request = ngx_http_enhanced_memcached_compute_key;
+      u->process_header = ngx_http_enhanced_memcached_process_request_incr_ns;
     }
     else if(r->method & (NGX_HTTP_PUT)) {
       read_body = 1;
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
-      ctx->end = ngx_http_memcached_crlf;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_CRLF;
+      ctx->end = ngx_http_enhanced_memcached_crlf;
       ctx->key_status = UNKNOWN;
-      ctx->when_key_ready = ngx_http_memcached_send_request_set;
-      u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_request_set;      
+      ctx->when_key_ready = ngx_http_enhanced_memcached_send_request_set;
+      u->create_request = ngx_http_enhanced_memcached_compute_key;
+      u->process_header = ngx_http_enhanced_memcached_process_request_set;      
     }
     else if(r->method & (NGX_HTTP_DELETE)) {
       read_body = 1;
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_CRLF;
-      ctx->end = ngx_http_memcached_crlf;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_CRLF;
+      ctx->end = ngx_http_enhanced_memcached_crlf;
       ctx->key_status = UNKNOWN;
-      ctx->when_key_ready = ngx_http_memcached_send_request_delete;
-      u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_request_delete;      
+      ctx->when_key_ready = ngx_http_enhanced_memcached_send_request_delete;
+      u->create_request = ngx_http_enhanced_memcached_compute_key;
+      u->process_header = ngx_http_enhanced_memcached_process_request_delete;      
     }
     else {
-      ctx->rest = ctx->end_len = NGX_HTTP_MEMCACHED_END;
-      ctx->end = ngx_http_memcached_end;
+      ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_END;
+      ctx->end = ngx_http_enhanced_memcached_end;
       ctx->key_status = UNKNOWN;
-      ctx->when_key_ready = ngx_http_memcached_send_request_get;
-      u->create_request = ngx_http_memcached_compute_key;
-      u->process_header = ngx_http_memcached_process_request_get;
+      ctx->when_key_ready = ngx_http_enhanced_memcached_send_request_get;
+      u->create_request = ngx_http_enhanced_memcached_compute_key;
+      u->process_header = ngx_http_enhanced_memcached_process_request_get;
     }
     
     if (read_body) {
@@ -346,7 +346,7 @@ ngx_http_memcached_handler(ngx_http_request_t *r)
 }
 
 static ngx_chain_t *
-ngx_http_memcached_create_buffer(ngx_http_request_t * r, size_t len)
+ngx_http_enhanced_memcached_create_buffer(ngx_http_request_t * r, size_t len)
 {
     ngx_buf_t                      *b;
     ngx_chain_t                    *cl;
@@ -368,7 +368,7 @@ ngx_http_memcached_create_buffer(ngx_http_request_t * r, size_t len)
 }
 
 static ngx_http_variable_value_t *
-ngx_http_memcached_md5(ngx_http_request_t * r, ngx_http_variable_value_t * v) {
+ngx_http_enhanced_memcached_md5(ngx_http_request_t * r, ngx_http_variable_value_t * v) {
     ngx_md5_t md5_ctx;
     u_char result[16];
     u_char * dumped_result;
@@ -395,26 +395,26 @@ ngx_http_memcached_md5(ngx_http_request_t * r, ngx_http_variable_value_t * v) {
 }
 
 static void
-ngx_http_upstream_send_another_request_dummy_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
+ngx_http_enhanced_memcached_upstream_send_another_request_dummy_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http upstream send another request dummy handler");
 }
 
 static ngx_int_t
-ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u);
+ngx_http_enhanced_memcached_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u);
   
 static void
-ngx_http_upstream_send_another_request_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
+ngx_http_enhanced_memcached_upstream_send_another_request_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http upstream send another request handler");
                    
-    ngx_http_upstream_send_another_request(r, u);
+    ngx_http_enhanced_memcached_upstream_send_another_request(r, u);
 }
 
 static ngx_int_t
-ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u)
+ngx_http_enhanced_memcached_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_t *u)
 {
     ngx_int_t          rc;
     ngx_connection_t  *c;
@@ -447,7 +447,7 @@ ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_
        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
                        "ngx_output_chain return NGX_AGAIN");
         
-        u->write_event_handler = ngx_http_upstream_send_another_request_handler;
+        u->write_event_handler = ngx_http_enhanced_memcached_upstream_send_another_request_handler;
         
         ngx_add_timer(c->write, u->conf->send_timeout);
 
@@ -488,7 +488,7 @@ ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_
 //     }
 // #endif
 
-    u->write_event_handler = ngx_http_upstream_send_another_request_dummy_handler;
+    u->write_event_handler = ngx_http_enhanced_memcached_upstream_send_another_request_dummy_handler;
 
     if (ngx_handle_write_event(c->write, 0) != NGX_OK) {
         return NGX_ERROR;
@@ -498,14 +498,14 @@ ngx_http_upstream_send_another_request(ngx_http_request_t *r, ngx_http_upstream_
 }
 
 static ngx_int_t
-ngx_memcached_initialize_namespace(ngx_http_request_t * r) {
+ngx_http_enhanced_memcached_initialize_namespace(ngx_http_request_t * r) {
   ngx_buf_t                      *b;
   ngx_chain_t                    *cl;
-  ngx_http_memcached_ctx_t       *ctx;
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
   
-  cl = ngx_http_memcached_create_buffer(r, 4 + ctx->namespace_key.len + 11);
+  cl = ngx_http_enhanced_memcached_create_buffer(r, 4 + ctx->namespace_key.len + 11);
   if (cl == NULL) {
     return NGX_ERROR;
   }
@@ -529,20 +529,20 @@ ngx_memcached_initialize_namespace(ngx_http_request_t * r) {
   ctx->key_status = WAIT_INIT_NS;
   
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "memcached initialize namespace for : \"%V\"", &ctx->namespace_key);
+                 "enhanced memcached initialize namespace for : \"%V\"", &ctx->namespace_key);
 
-  return ngx_http_upstream_send_another_request(r, r->upstream);
+  return ngx_http_enhanced_memcached_upstream_send_another_request(r, r->upstream);
 }
 
 static ngx_int_t
-ngx_memcached_set_key_with_namespace(ngx_http_request_t * r) {
-  ngx_http_memcached_ctx_t       *ctx;
+ngx_http_enhanced_memcached_set_key_with_namespace(ngx_http_request_t * r) {
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
   ngx_buf_t                      *b;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
   
   ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "memcached compute key from \"%V\" for namespace \"%V\" : \"%v\"",
+                 "enhanced memcached compute key from \"%V\" for namespace \"%V\" : \"%v\"",
                   &ctx->key, &ctx->namespace_key, &ctx->namespace_value);
 
   b = ngx_create_temp_buf(r->pool, ctx->namespace_key.len + ctx->key.len + ctx->namespace_value.len);
@@ -562,12 +562,12 @@ ngx_memcached_set_key_with_namespace(ngx_http_request_t * r) {
 }
 
 static ngx_int_t
-ngx_http_memcached_process_key(ngx_http_request_t * r) {
+ngx_http_enhanced_memcached_process_key(ngx_http_request_t * r) {
   ngx_int_t                       rc;
   u_char                         *p, *len;
   ngx_str_t                       line;
   ngx_http_upstream_t             *u;
-  ngx_http_memcached_ctx_t       *ctx;
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
   off_t                           value_len;
 
   u = r->upstream;
@@ -588,18 +588,18 @@ found:
   line.data = u->buffer.pos;
 
   ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                 "memcached response when fetching namespace: \"%V\"", &line);
+                 "enhanced memcached response when fetching namespace: \"%V\"", &line);
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
   
   if (ctx->key_status == WAIT_GET_NS) {
     if (line.len >= sizeof("END") - 1 && ngx_strncmp(line.data, "END", sizeof("END") - 1) == 0) {
       ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                     "memcached no namespace found for : \"%V\"", &ctx->namespace_key);
+                     "enhanced memcached no namespace found for : \"%V\"", &ctx->namespace_key);
       
       u->buffer.pos = p + 1;
                        
-      return ngx_memcached_initialize_namespace(r);
+      return ngx_http_enhanced_memcached_initialize_namespace(r);
     }
     
     
@@ -610,7 +610,7 @@ found:
 
       if (p + ctx->namespace_key.len <= u->buffer.last && ngx_strncmp(p, ctx->namespace_key.data, ctx->namespace_key.len) != 0) {
           ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                        "memcached sent invalid key in response \"%V\" "
+                        "enhanced memcached sent invalid key in response \"%V\" "
                         "for key \"%V\"  while getting namespace",
                         &line, &ctx->namespace_key);
 
@@ -642,9 +642,9 @@ length:
 
       u->buffer.pos += line.len + 2;
 
-      if (u->buffer.pos + value_len + NGX_HTTP_MEMCACHED_END > u->buffer.last) {
+      if (u->buffer.pos + value_len + NGX_HTTP_ENHANCED_MEMCACHED_END > u->buffer.last) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                      "memcached sent invalid response "
+                      "enhanced memcached sent invalid response "
                        "for key \"%V\"  while getting namespace",
                         &ctx->namespace_key);
         return NGX_ERROR;
@@ -653,21 +653,21 @@ length:
       ctx->namespace_value.data = u->buffer.pos;
       ctx->namespace_value.len = value_len;
       
-      rc = ngx_memcached_set_key_with_namespace(r);
+      rc = ngx_http_enhanced_memcached_set_key_with_namespace(r);
       if (rc != NGX_OK) {
         return rc;
       };
       
       u->buffer.pos += value_len;
       
-      if (u->buffer.pos + NGX_HTTP_MEMCACHED_END <= u->buffer.last && ngx_strncmp(u->buffer.pos, ngx_http_memcached_end, NGX_HTTP_MEMCACHED_END) != 0) {
+      if (u->buffer.pos + NGX_HTTP_ENHANCED_MEMCACHED_END <= u->buffer.last && ngx_strncmp(u->buffer.pos, ngx_http_enhanced_memcached_end, NGX_HTTP_ENHANCED_MEMCACHED_END) != 0) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                      "memcached sent invalid response "
+                      "enhanced memcached sent invalid response "
                        "for key \"%V\"  while getting namespace",
                         &ctx->namespace_key);
         return NGX_ERROR;
       } 
-      u->buffer.pos += NGX_HTTP_MEMCACHED_END;
+      u->buffer.pos += NGX_HTTP_ENHANCED_MEMCACHED_END;
 
       rc = ctx->when_key_ready(r);
       if (rc != NGX_OK) {
@@ -676,21 +676,21 @@ length:
 
       r->upstream->request_sent = 0;
 
-      return ngx_http_upstream_send_another_request(r, r->upstream);
+      return ngx_http_enhanced_memcached_upstream_send_another_request(r, r->upstream);
     }
   }
   
   if (ctx->key_status == WAIT_INIT_NS) {
     if (line.len >= sizeof("STORED") - 1 && ngx_strncmp(line.data, "STORED", sizeof("STORED") - 1) == 0) {
       ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                     "memcached namespace initialized for : \"%V\"", &ctx->namespace_key);
+                     "enhanced memcached namespace initialized for : \"%V\"", &ctx->namespace_key);
 
       u->buffer.pos = p + 1;
       
       ctx->namespace_value.data = (u_char *) "0";
       ctx->namespace_value.len = sizeof("0") - 1;
       
-      rc = ngx_memcached_set_key_with_namespace(r);
+      rc = ngx_http_enhanced_memcached_set_key_with_namespace(r);
       if (rc != NGX_OK) {
         return rc;
       };
@@ -702,7 +702,7 @@ length:
 
       r->upstream->request_sent = 0;
 
-      return ngx_http_upstream_send_another_request(r, r->upstream);
+      return ngx_http_enhanced_memcached_upstream_send_another_request(r, r->upstream);
     }
   }
                      
@@ -711,22 +711,22 @@ length:
 no_valid:
 
   ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                "memcached sent invalid response while getting namespace: \"%V\"", &line);
+                "enhanced memcached sent invalid response while getting namespace: \"%V\"", &line);
 
   return NGX_HTTP_UPSTREAM_INVALID_HEADER;
 }
 
 static ngx_int_t
-ngx_http_memcached_get_namespace(ngx_http_request_t * r, ngx_http_variable_value_t *namespace) {
-  ngx_http_memcached_ctx_t       *ctx;
+ngx_http_enhanced_memcached_get_namespace(ngx_http_request_t * r, ngx_http_variable_value_t *namespace) {
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
   ngx_buf_t                      *b;
   ngx_chain_t                    *cl;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
   
   ctx->key_status = WAIT_GET_NS;
   
-  cl = ngx_http_memcached_create_buffer(r, 4 + 6 + namespace->len + 2);
+  cl = ngx_http_enhanced_memcached_create_buffer(r, 4 + 6 + namespace->len + 2);
   if (cl == NULL) {
     return NGX_ERROR;
   }
@@ -754,15 +754,15 @@ ngx_http_memcached_get_namespace(ngx_http_request_t * r, ngx_http_variable_value
 }
 
 static ngx_int_t
-ngx_http_memcached_compute_key(ngx_http_request_t * r) {
+ngx_http_enhanced_memcached_compute_key(ngx_http_request_t * r) {
   size_t                          len;
   uintptr_t                       escape;
-  ngx_http_memcached_ctx_t       *ctx;
-  ngx_http_memcached_loc_conf_t  *mlcf;
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
+  ngx_http_enhanced_memcached_loc_conf_t  *mlcf;
   ngx_http_variable_value_t      *vv;
   ngx_buf_t                      *b;
     
-  mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+  mlcf = ngx_http_get_module_loc_conf(r, ngx_http_enhanced_memcached_module);
 
   vv = ngx_http_get_indexed_variable(r, mlcf->key_index);
 
@@ -776,7 +776,7 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http memcached key before hash : \"%v\"", vv);
 
-    vv = ngx_http_memcached_md5(r, vv);
+    vv = ngx_http_enhanced_memcached_md5(r, vv);
     if (vv == NULL) {
       return NGX_ERROR;
     }
@@ -791,7 +791,7 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     return NGX_ERROR;
   }
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
   ctx->key.data = b->last;
   
@@ -812,18 +812,18 @@ ngx_http_memcached_compute_key(ngx_http_request_t * r) {
     ctx->key_status = READY;
     return ctx->when_key_ready(r);
   }
-  return ngx_http_memcached_get_namespace(r, vv);
+  return ngx_http_enhanced_memcached_get_namespace(r, vv);
 }
 
 static ngx_int_t
-ngx_http_memcached_send_request_incr_ns(ngx_http_request_t *r) {
+ngx_http_enhanced_memcached_send_request_incr_ns(ngx_http_request_t *r) {
   ngx_chain_t                    *cl;
   ngx_buf_t                      *b;
-  ngx_http_memcached_ctx_t       *ctx;
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
   
-  cl = ngx_http_memcached_create_buffer(r, 5 + ctx->namespace_key.len + 2 + 2);
+  cl = ngx_http_enhanced_memcached_create_buffer(r, 5 + ctx->namespace_key.len + 2 + 2);
   if (cl == NULL) {
     return NGX_ERROR;
   }
@@ -845,15 +845,15 @@ ngx_http_memcached_send_request_incr_ns(ngx_http_request_t *r) {
 
 
 static ngx_int_t
-ngx_http_memcached_send_request_get(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_send_request_get(ngx_http_request_t *r)
 {
   ngx_buf_t                      *b;
   ngx_chain_t                    *cl;
-  ngx_http_memcached_ctx_t       *ctx;
+  ngx_http_enhanced_memcached_ctx_t       *ctx;
 
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
-  cl = ngx_http_memcached_create_buffer(r, 4 + ctx->key.len + 2);
+  cl = ngx_http_enhanced_memcached_create_buffer(r, 4 + ctx->key.len + 2);
   if (cl == NULL) {
     return NGX_ERROR;
   }
@@ -872,7 +872,7 @@ ngx_http_memcached_send_request_get(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_send_request_set(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_send_request_set(ngx_http_request_t *r)
 {
     uintptr_t                       bytes_len;
     off_t                           bytes;
@@ -880,19 +880,19 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
     ngx_buf_t                      *b;
     ngx_chain_t                    *cl, *in;
     ngx_http_variable_value_t      *vv;
-    ngx_http_memcached_loc_conf_t  *mlcf;
+    ngx_http_enhanced_memcached_loc_conf_t  *mlcf;
     u_char                          bytes_buf[NGX_UINT32_LEN];
-    ngx_http_memcached_ctx_t       *ctx;
+    ngx_http_enhanced_memcached_ctx_t       *ctx;
 
     default_expire_value.data = (u_char *) "0";
     default_expire_value.len = 1;
 
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+    ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                      "http memcached set value for key : \"%V\"", &ctx->key);
     
-    cl = ngx_http_memcached_create_buffer(r, 4 + ctx->key.len + 3);
+    cl = ngx_http_enhanced_memcached_create_buffer(r, 4 + ctx->key.len + 3);
     if (cl == NULL) {
         return NGX_ERROR;
     }
@@ -901,17 +901,17 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
 
     b = cl->buf;
 
-    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_enhanced_memcached_module);
     vv = ngx_http_get_indexed_variable(r, mlcf->use_add_index);
 
     if (vv == NULL || vv->not_found || vv->len == 0) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "memcached use set command");
+                       "enhanced memcached use set command");
         *b->last++ = 's'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
     }
     else {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "memcached use add command");
+                       "enhanced memcached use add command");
         *b->last++ = 'a'; *b->last++ = 'd'; *b->last++ = 'd'; *b->last++ = ' ';
     }
 
@@ -919,7 +919,7 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
 
     *b->last++ = ' '; *b->last++ = '0'; *b->last++ = ' ';
     
-    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_enhanced_memcached_module);
     vv = ngx_http_get_indexed_variable(r, mlcf->expire_index);
 
     if (vv == NULL || vv->not_found || vv->len == 0) {
@@ -939,16 +939,16 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
     
     if (bytes != r->headers_in.content_length_n) {
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                    "memcached put : wrong content length size, headers %d, found %d", r->headers_in.content_length_n, bytes);
+                    "enhanced memcached put : wrong content length size, headers %d, found %d", r->headers_in.content_length_n, bytes);
       return NGX_ERROR;
     }
     
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "memcached put : size %d", bytes);
+                   "enhanced memcached put : size %d", bytes);
     
     bytes_len = ngx_snprintf(bytes_buf, sizeof(bytes_buf), "%O", bytes) - bytes_buf;
     
-    cl->next = ngx_http_memcached_create_buffer(r, vv->len + 1 + bytes_len  + 2);
+    cl->next = ngx_http_enhanced_memcached_create_buffer(r, vv->len + 1 + bytes_len  + 2);
     cl = cl->next;
     if (cl == NULL) {
       return NGX_ERROR;
@@ -983,7 +983,7 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
       in = in->next;
     }
     
-    cl->next = ngx_http_memcached_create_buffer(r, 2);
+    cl->next = ngx_http_enhanced_memcached_create_buffer(r, 2);
     cl = cl->next;
     if (cl == NULL) {
         return NGX_ERROR;
@@ -996,15 +996,15 @@ ngx_http_memcached_send_request_set(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_send_request_delete(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_send_request_delete(ngx_http_request_t *r)
 {
     ngx_buf_t                      *b;
     ngx_chain_t                    *cl;
-    ngx_http_memcached_ctx_t       *ctx;
+    ngx_http_enhanced_memcached_ctx_t       *ctx;
   
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+    ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
     
-    cl = ngx_http_memcached_create_buffer(r, 7 + ctx->key.len + 2);
+    cl = ngx_http_enhanced_memcached_create_buffer(r, 7 + ctx->key.len + 2);
     if (cl == NULL) {
         return NGX_ERROR;
     }
@@ -1015,7 +1015,7 @@ ngx_http_memcached_send_request_delete(ngx_http_request_t *r)
     r->upstream->request_bufs = cl;
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                  "memcached : send delete command");
+                  "enhanced memcached : send delete command");
 
     b->last = ngx_copy(b->last, ctx->key.data, ctx->key.len);
 
@@ -1025,20 +1025,20 @@ ngx_http_memcached_send_request_delete(ngx_http_request_t *r)
 }
 
 static ngx_int_t
-ngx_http_memcached_create_request_fixed_str(ngx_http_request_t *r, char * cmd, char * str, u_int str_len)
+ngx_http_enhanced_memcached_create_request_fixed_str(ngx_http_request_t *r, char * cmd, char * str, u_int str_len)
 {
     ngx_buf_t                      *b;
     ngx_chain_t                    *cl;
-    ngx_http_memcached_ctx_t       *ctx;
+    ngx_http_enhanced_memcached_ctx_t       *ctx;
     
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+    ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
     
     ctx->key.data = (u_char *) str;
     ctx->key.len = str_len;
     
-    ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached %s requested", cmd);
+    ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "enhanced memcached %s requested", cmd);
 
-    cl = ngx_http_memcached_create_buffer(r, str_len + 2);
+    cl = ngx_http_enhanced_memcached_create_buffer(r, str_len + 2);
     if (cl == NULL) {
       return NGX_ERROR;
     }
@@ -1054,35 +1054,35 @@ ngx_http_memcached_create_request_fixed_str(ngx_http_request_t *r, char * cmd, c
 }
 
 static ngx_int_t
-ngx_http_memcached_send_request_flush(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_send_request_flush(ngx_http_request_t *r)
 {
-    return ngx_http_memcached_create_request_fixed_str(r, "flush", "flush_all", sizeof("flush_all") - 1);
+    return ngx_http_enhanced_memcached_create_request_fixed_str(r, "flush", "flush_all", sizeof("flush_all") - 1);
 }
 
 static ngx_int_t
-ngx_http_memcached_send_request_stats(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_send_request_stats(ngx_http_request_t *r)
 {
-    return ngx_http_memcached_create_request_fixed_str(r, "stats", "stats", sizeof("stats") - 1);
+    return ngx_http_enhanced_memcached_create_request_fixed_str(r, "stats", "stats", sizeof("stats") - 1);
 }
 
 static ngx_int_t
-ngx_http_memcached_reinit_request(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_reinit_request(ngx_http_request_t *r)
 {
     return NGX_OK;
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_get(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_get(ngx_http_request_t *r)
 {
     u_char                    *p, *len;
     ngx_str_t                  line;
     ngx_http_upstream_t       *u;
-    ngx_http_memcached_ctx_t  *ctx;
+    ngx_http_enhanced_memcached_ctx_t  *ctx;
     
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+    ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
     if (ctx->key_status != READY) {
-      return ngx_http_memcached_process_key(r);
+      return ngx_http_enhanced_memcached_process_key(r);
     }
 
     u = r->upstream;
@@ -1103,7 +1103,7 @@ found:
     line.data = u->buffer.pos;
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "memcached response: \"%V\"", &line);
+                   "enhanced memcached response: \"%V\"", &line);
 
     p = u->buffer.pos;
 
@@ -1113,7 +1113,7 @@ found:
 
         if (p + ctx->key.len <= u->buffer.last && ngx_strncmp(p, ctx->key.data, ctx->key.len) != 0) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "memcached sent invalid key in response \"%V\" "
+                          "enhanced memcached sent invalid key in response \"%V\" "
                           "for key \"%V\"",
                           &line, &ctx->key);
 
@@ -1145,7 +1145,7 @@ length:
         u->headers_in.content_length_n = ngx_atoof(len, p - len - 1);
         if (u->headers_in.content_length_n == -1) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "memcached sent invalid length in response \"%V\" "
+                          "enhanced memcached sent invalid length in response \"%V\" "
                           "for key \"%V\"",
                           &line, &ctx->key);
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
@@ -1153,8 +1153,8 @@ length:
 
         u->buffer.pos += line.len + 2;
         
-        if (u->buffer.pos + NGX_HTTP_MEMCACHED_EXTRACT_HEADERS <= u->buffer.last
-          && ngx_strncmp(u->buffer.pos, ngx_http_memcached_extract_headers, NGX_HTTP_MEMCACHED_EXTRACT_HEADERS) == 0) {
+        if (u->buffer.pos + NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS <= u->buffer.last
+          && ngx_strncmp(u->buffer.pos, ngx_http_enhanced_memcached_extract_headers, NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS) == 0) {
           
           ngx_table_elt_t *h;
           ngx_int_t                       rc;
@@ -1164,8 +1164,8 @@ length:
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "extracting headers from memcached value");
           
-          u->buffer.pos += NGX_HTTP_MEMCACHED_EXTRACT_HEADERS;
-          u->headers_in.content_length_n -= NGX_HTTP_MEMCACHED_EXTRACT_HEADERS;
+          u->buffer.pos += NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS;
+          u->headers_in.content_length_n -= NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS;
 
           if (u->headers_in.content_length_n == 0) {
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
@@ -1282,7 +1282,7 @@ length:
             /* there was error while a header line parsing */
 
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                      "memcached value contain invalid header");
+                      "enhanced memcached value contain invalid header");
 
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
           }
@@ -1296,7 +1296,7 @@ length:
 
     if (u->buffer.pos + sizeof("END") - 1 <= u->buffer.last && ngx_strncmp(u->buffer.pos, "END", sizeof("END") - 1) == 0) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "memcached key not found : \"%V\"", &ctx->key);
+                       "enhanced memcached key not found : \"%V\"", &ctx->key);
 
         u->headers_in.status_n = 404;
         u->state->status = 404;
@@ -1308,19 +1308,19 @@ length:
 no_valid:
 
     ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                  "memcached sent invalid response: \"%V\"", &line);
+                  "enhanced memcached sent invalid response: \"%V\"", &line);
 
     return NGX_HTTP_UPSTREAM_INVALID_HEADER;
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_return_string(ngx_http_request_t *r, char * cmd, u_char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
+ngx_http_enhanced_memcached_process_request_return_string(ngx_http_request_t *r, char * cmd, u_char * str, u_int str_len, int other_code, char * str_other_code, u_int str_len_other_code)
 {
     int                      return_code; 
     u_char                    *p;
     ngx_str_t                  line;
     ngx_http_upstream_t       *u;
-    ngx_http_memcached_ctx_t  *ctx;
+    ngx_http_enhanced_memcached_ctx_t  *ctx;
     
     u = r->upstream;
 
@@ -1334,13 +1334,13 @@ ngx_http_memcached_process_request_return_string(ngx_http_request_t *r, char * c
 
 found:
 
-    ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+    ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
     line.len = p - u->buffer.pos - 1;
     line.data = u->buffer.pos;
 
     ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                  "memcached response: \"%V\" for key \"%V\"", &line, &ctx->key);
+                  "enhanced memcached response: \"%V\" for key \"%V\"", &line, &ctx->key);
 
     return_code = -1;
     
@@ -1356,7 +1356,7 @@ found:
     
     if (return_code == -1) {
       ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                    "memcached %s invalid response for key \"%V\"",
+                    "enhanced memcached %s invalid response for key \"%V\"",
                     cmd, &ctx->key);
       return NGX_HTTP_UPSTREAM_INVALID_HEADER;
     }
@@ -1375,82 +1375,82 @@ found:
 
 
 static ngx_int_t
-ngx_http_memcached_process_request_set(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_set(ngx_http_request_t *r)
 {
-  ngx_http_memcached_ctx_t  *ctx;
+  ngx_http_enhanced_memcached_ctx_t  *ctx;
   
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
   if (ctx->key_status != READY) {
-    return ngx_http_memcached_process_key(r);
+    return ngx_http_enhanced_memcached_process_key(r);
   }
 
-  return ngx_http_memcached_process_request_return_string(r, "set", (u_char *) "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
+  return ngx_http_enhanced_memcached_process_request_return_string(r, "set", (u_char *) "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_flush(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_flush(ngx_http_request_t *r)
 {
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_request_return_string(r, "flush", (u_char *) "OK", sizeof("OK") - 1, -1, NULL, -1);
+  rc = ngx_http_enhanced_memcached_process_request_return_string(r, "flush", (u_char *) "OK", sizeof("OK") - 1, -1, NULL, -1);
   if (rc == NGX_OK) {
-     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached flush OK");
+     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "enhanced memcached flush OK");
   }
   return rc;
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_incr_ns(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_incr_ns(ngx_http_request_t *r)
 {
   ngx_int_t                       rc;
   off_t                           current;
   u_char                          bytes_buf[NGX_UINT32_LEN];
   u_int                           bytes_len;
   
-  ngx_http_memcached_ctx_t  *ctx;
+  ngx_http_enhanced_memcached_ctx_t  *ctx;
 
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
   if (ctx->key_status != READY) {
-    return ngx_http_memcached_process_key(r);
+    return ngx_http_enhanced_memcached_process_key(r);
   }
   
   current = ngx_atoof(ctx->namespace_value.data, ctx->namespace_value.len);
   
   ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                "memcached current namespace \"%V\", value : %d", &ctx->namespace_key, current);
+                "enhanced memcached current namespace \"%V\", value : %d", &ctx->namespace_key, current);
   
   current ++;
   bytes_len = ngx_snprintf(bytes_buf, sizeof(bytes_buf), "%O", current) - bytes_buf;
   
-  rc = ngx_http_memcached_process_request_return_string(r, "incr ns", bytes_buf, bytes_len, -1, NULL, -1);
+  rc = ngx_http_enhanced_memcached_process_request_return_string(r, "incr ns", bytes_buf, bytes_len, -1, NULL, -1);
   if (rc == NGX_OK) {
-     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached incr ns OK");
+     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "enhanced memcached incr ns OK");
   }
   return rc;
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_delete(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_delete(ngx_http_request_t *r)
 {
-  ngx_http_memcached_ctx_t  *ctx;
+  ngx_http_enhanced_memcached_ctx_t  *ctx;
 
-  ctx = ngx_http_get_module_ctx(r, ngx_http_memcached_module);
+  ctx = ngx_http_get_module_ctx(r, ngx_http_enhanced_memcached_module);
 
   if (ctx->key_status != READY) {
-   return ngx_http_memcached_process_key(r);
+   return ngx_http_enhanced_memcached_process_key(r);
   }
    
   ngx_int_t rc;
-  rc = ngx_http_memcached_process_request_return_string(r, "delete", (u_char *) "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
+  rc = ngx_http_enhanced_memcached_process_request_return_string(r, "delete", (u_char *) "DELETED", sizeof("DELETED") - 1, 404, "NOT_FOUND", sizeof("NOT_FOUND") - 1);
   if (rc == NGX_OK) {
-     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "memcached delete OK");
+     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "enhanced memcached delete OK");
   }
   return rc;
 }
 
 static ngx_int_t
-ngx_http_memcached_process_request_stats(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_process_request_stats(ngx_http_request_t *r)
 {
     u_char                    *p, *last_p;
     ngx_str_t                  line;
@@ -1477,7 +1477,7 @@ found:
           line.data = last_p;
 
           ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                         "memcached stats line read : \"%V\", current response size : %d", &line, u->headers_in.content_length_n);
+                         "enhanced memcached stats line read : \"%V\", current response size : %d", &line, u->headers_in.content_length_n);
           
           if (line.len >= sizeof("END") - 1 && ngx_strncmp(line.data, "END", sizeof("END") - 1) == 0) {
             u->headers_in.status_n = 200;
@@ -1490,9 +1490,9 @@ found:
             r->headers_out.content_type_lowcase = NULL;
             
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "memcached stats end reach, final response size : %d", u->headers_in.content_length_n);
+                           "enhanced memcached stats end reach, final response size : %d", u->headers_in.content_length_n);
             ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                          "memcached stats OK");
+                          "enhanced memcached stats OK");
             
             return NGX_OK;
           }
@@ -1502,14 +1502,14 @@ found:
     }
     
     ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                  "memcached stats invalid response");
+                  "enhanced memcached stats invalid response");
     return NGX_HTTP_UPSTREAM_INVALID_HEADER;
 }
 
 static ngx_int_t
-ngx_http_memcached_filter_init(void *data)
+ngx_http_enhanced_memcached_filter_init(void *data)
 {
-    ngx_http_memcached_ctx_t  *ctx = data;
+    ngx_http_enhanced_memcached_ctx_t  *ctx = data;
 
     ngx_http_upstream_t  *u;
 
@@ -1521,9 +1521,9 @@ ngx_http_memcached_filter_init(void *data)
 }
 
 static ngx_int_t
-ngx_http_memcached_filter(void *data, ssize_t bytes)
+ngx_http_enhanced_memcached_filter(void *data, ssize_t bytes)
 {
-    ngx_http_memcached_ctx_t  *ctx = data;
+    ngx_http_enhanced_memcached_ctx_t  *ctx = data;
 
     u_char               *last;
     ngx_buf_t            *b;
@@ -1541,7 +1541,7 @@ ngx_http_memcached_filter(void *data, ssize_t bytes)
             != 0)
         {
             ngx_log_error(NGX_LOG_ERR, ctx->request->connection->log, 0,
-                          "memcached sent invalid trailer");
+                          "enhanced memcached sent invalid trailer");
 
             u->length = 0;
             ctx->rest = 0;
@@ -1580,7 +1580,7 @@ ngx_http_memcached_filter(void *data, ssize_t bytes)
     cl->buf->tag = u->output.tag;
 
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
-                   "memcached filter bytes:%z size:%z length:%z rest:%z",
+                   "enhanced memcached filter bytes:%z size:%z length:%z rest:%z",
                    bytes, b->last - b->pos, u->length, ctx->rest);
 
     if (bytes <= (ssize_t) (u->length - ctx->end_len)) {
@@ -1592,7 +1592,7 @@ ngx_http_memcached_filter(void *data, ssize_t bytes)
 
     if (ngx_strncmp(last, ctx->end, b->last - last) != 0) {
         ngx_log_error(NGX_LOG_ERR, ctx->request->connection->log, 0,
-                      "memcached sent invalid trailer");
+                      "enhanced memcached sent invalid trailer");
 
         b->last = last;
         cl->buf->last = last;
@@ -1616,7 +1616,7 @@ ngx_http_memcached_filter(void *data, ssize_t bytes)
 
 
 static void
-ngx_http_memcached_abort_request(ngx_http_request_t *r)
+ngx_http_enhanced_memcached_abort_request(ngx_http_request_t *r)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "abort http memcached request");
@@ -1625,7 +1625,7 @@ ngx_http_memcached_abort_request(ngx_http_request_t *r)
 
 
 static void
-ngx_http_memcached_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
+ngx_http_enhanced_memcached_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
 {
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "finalize http memcached request");
@@ -1634,11 +1634,11 @@ ngx_http_memcached_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
 
 
 static void *
-ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
+ngx_http_enhanced_memcached_create_loc_conf(ngx_conf_t *cf)
 {
-    ngx_http_memcached_loc_conf_t  *conf;
+    ngx_http_enhanced_memcached_loc_conf_t  *conf;
 
-    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_memcached_loc_conf_t));
+    conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_enhanced_memcached_loc_conf_t));
     if (conf == NULL) {
         return NULL;
     }
@@ -1688,10 +1688,10 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
 
 
 static char *
-ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
+ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
-    ngx_http_memcached_loc_conf_t *prev = parent;
-    ngx_http_memcached_loc_conf_t *conf = child;
+    ngx_http_enhanced_memcached_loc_conf_t *prev = parent;
+    ngx_http_enhanced_memcached_loc_conf_t *conf = child;
 
     ngx_conf_merge_msec_value(conf->upstream.connect_timeout,
                               prev->upstream.connect_timeout, 60000);
@@ -1757,7 +1757,7 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     }
     
     if ((conf->flush && conf->stats) || (conf->flush && conf->allow_put) || (conf->stats && conf->allow_put) || (conf->flush && conf->flush_namespace) || (conf->stats && conf->flush_namespace) || (conf->allow_put && conf->flush_namespace)) {
-      ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "memcached configuration : stats, flush, flush_namespace and allow put are mutually exclusive");
+      ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "enhanced memcached configuration : stats, flush, flush_namespace and allow put are mutually exclusive");
       return NGX_CONF_ERROR;
     }
     
@@ -1779,9 +1779,9 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
 
 static char *
-ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
+ngx_http_enhanced_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-    ngx_http_memcached_loc_conf_t *mlcf = conf;
+    ngx_http_enhanced_memcached_loc_conf_t *mlcf = conf;
 
     ngx_str_t                 *value;
     ngx_url_t                  u;
@@ -1805,31 +1805,31 @@ ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
 
-    clcf->handler = ngx_http_memcached_handler;
+    clcf->handler = ngx_http_enhanced_memcached_handler;
 
     if (clcf->name.data[clcf->name.len - 1] == '/') {
         clcf->auto_redirect = 1;
     }
 
-    mlcf->key_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_key);
+    mlcf->key_index = ngx_http_get_variable_index(cf, &ngx_http_enhanced_memcached_key);
 
     if (mlcf->key_index == NGX_ERROR) {
         return NGX_CONF_ERROR;
     }
 
-    mlcf->expire_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_expire);
+    mlcf->expire_index = ngx_http_get_variable_index(cf, &ngx_http_enhanced_memcached_expire);
 
     if (mlcf->expire_index == NGX_ERROR) {
         return NGX_CONF_ERROR;
     }
     
-    mlcf->use_add_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_use_add);
+    mlcf->use_add_index = ngx_http_get_variable_index(cf, &ngx_http_enhanced_memcached_use_add);
 
     if (mlcf->use_add_index == NGX_ERROR) {
         return NGX_CONF_ERROR;
     }
     
-    mlcf->key_namespace_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_key_namespace);
+    mlcf->key_namespace_index = ngx_http_get_variable_index(cf, &ngx_http_enhanced_memcached_key_namespace);
 
     if (mlcf->key_namespace_index == NGX_ERROR) {
         return NGX_CONF_ERROR;
@@ -1839,7 +1839,7 @@ ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 static ngx_int_t
-ngx_http_memcached_variable_not_found(ngx_http_request_t *r,
+ngx_http_enhanced_memcached_variable_not_found(ngx_http_request_t *r,
         ngx_http_variable_value_t *v, uintptr_t data)
 {
     v->not_found = 1;
@@ -1848,32 +1848,32 @@ ngx_http_memcached_variable_not_found(ngx_http_request_t *r,
 
 
 static ngx_int_t
-ngx_http_memcached_init(ngx_conf_t *cf) {
+ngx_http_enhanced_memcached_init(ngx_conf_t *cf) {
   ngx_http_variable_t *v;
 
-  v = ngx_http_add_variable(cf, &ngx_http_memcached_key, NGX_HTTP_VAR_CHANGEABLE);
+  v = ngx_http_add_variable(cf, &ngx_http_enhanced_memcached_key, NGX_HTTP_VAR_CHANGEABLE);
   if (v == NULL) {
       return NGX_ERROR;
   }
-  v->get_handler = ngx_http_memcached_variable_not_found;
+  v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
  
-  v = ngx_http_add_variable(cf, &ngx_http_memcached_expire, NGX_HTTP_VAR_CHANGEABLE);
+  v = ngx_http_add_variable(cf, &ngx_http_enhanced_memcached_expire, NGX_HTTP_VAR_CHANGEABLE);
   if (v == NULL) {
       return NGX_ERROR;
   }
-  v->get_handler = ngx_http_memcached_variable_not_found;
+  v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
  
-  v = ngx_http_add_variable(cf, &ngx_http_memcached_use_add, NGX_HTTP_VAR_CHANGEABLE);
+  v = ngx_http_add_variable(cf, &ngx_http_enhanced_memcached_use_add, NGX_HTTP_VAR_CHANGEABLE);
   if (v == NULL) {
       return NGX_ERROR;
   }
-  v->get_handler = ngx_http_memcached_variable_not_found;
+  v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
  
-  v = ngx_http_add_variable(cf, &ngx_http_memcached_key_namespace, NGX_HTTP_VAR_CHANGEABLE);
+  v = ngx_http_add_variable(cf, &ngx_http_enhanced_memcached_key_namespace, NGX_HTTP_VAR_CHANGEABLE);
    if (v == NULL) {
        return NGX_ERROR;
    }
-   v->get_handler = ngx_http_memcached_variable_not_found;
+   v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
   
   return NGX_OK;
 }
