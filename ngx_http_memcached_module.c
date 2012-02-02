@@ -19,6 +19,7 @@ typedef struct {
     ngx_http_upstream_conf_t   upstream;
     ngx_int_t                  key_index;
     ngx_int_t                  expire_index;
+    ngx_int_t                  use_add_index;
     ngx_flag_t                 hash_keys_with_md5;
     ngx_flag_t                 allow_put;
     ngx_flag_t                 allow_delete;
@@ -196,6 +197,7 @@ ngx_module_t  ngx_http_memcached_module = {
 
 static ngx_str_t  ngx_http_memcached_key = ngx_string("memcached_key");
 static ngx_str_t  ngx_http_memcached_expire = ngx_string("memcached_expire");
+static ngx_str_t  ngx_http_memcached_use_add = ngx_string("memcached_use_add");
 
 #define NGX_HTTP_MEMCACHED_END   (sizeof(ngx_http_memcached_end) - 1)
 static u_char  ngx_http_memcached_end[] = CRLF "END" CRLF;
@@ -466,7 +468,19 @@ ngx_http_memcached_create_request_set(ngx_http_request_t *r)
     }
     b = cl->buf;
 
-    *b->last++ = 's'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
+    mlcf = ngx_http_get_module_loc_conf(r, ngx_http_memcached_module);
+    vv = ngx_http_get_indexed_variable(r, mlcf->use_add_index);
+
+    if (vv == NULL || vv->not_found || vv->len == 0) {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "memcached use set command");
+        *b->last++ = 's'; *b->last++ = 'e'; *b->last++ = 't'; *b->last++ = ' ';
+    }
+    else {
+        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    "memcached use set command");
+        *b->last++ = 'a'; *b->last++ = 'd'; *b->last++ = 'd'; *b->last++ = ' ';
+    }
 
     r->upstream->request_bufs = cl;
 
@@ -948,7 +962,7 @@ found:
 static ngx_int_t
 ngx_http_memcached_process_header_set(ngx_http_request_t *r)
 {
-  return ngx_http_memcached_process_header_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, -1, NULL, -1);
+  return ngx_http_memcached_process_header_fixed_string(r, "set", "STORED", sizeof("STORED") - 1, 409, "NOT_STORED", sizeof("NOT_STORED") - 1);
 }
 
 static ngx_int_t
@@ -1339,6 +1353,12 @@ ngx_http_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
     
+    mlcf->use_add_index = ngx_http_get_variable_index(cf, &ngx_http_memcached_use_add);
+
+    if (mlcf->use_add_index == NGX_ERROR) {
+        return NGX_CONF_ERROR;
+    }
+    
     return NGX_CONF_OK;
 }
 
@@ -1362,6 +1382,12 @@ ngx_http_memcached_init(ngx_conf_t *cf) {
   v->get_handler = ngx_http_memcached_variable_not_found;
  
   v = ngx_http_add_variable(cf, &ngx_http_memcached_expire, NGX_HTTP_VAR_CHANGEABLE);
+  if (v == NULL) {
+      return NGX_ERROR;
+  }
+  v->get_handler = ngx_http_memcached_variable_not_found;
+ 
+  v = ngx_http_add_variable(cf, &ngx_http_memcached_use_add, NGX_HTTP_VAR_CHANGEABLE);
   if (v == NULL) {
       return NGX_ERROR;
   }
