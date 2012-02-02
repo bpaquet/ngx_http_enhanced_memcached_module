@@ -725,7 +725,7 @@ ngx_http_memcached_get_namespace(ngx_http_request_t * r, ngx_http_variable_value
   
   ctx->key_status = WAIT_GET_NS;
   
-  cl = ngx_http_memcached_create_buffer(r, 4 + 4 + namespace->len + 2);
+  cl = ngx_http_memcached_create_buffer(r, 4 + 6 + namespace->len + 2);
   if (cl == NULL) {
     return NGX_ERROR;
   }
