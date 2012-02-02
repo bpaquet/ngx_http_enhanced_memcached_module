@@ -17,6 +17,8 @@ typedef struct {
     ngx_http_upstream_conf_t   upstream;
     ngx_int_t                  index;
     ngx_flag_t                 allow_put;
+    ngx_flag_t                 stats;
+    ngx_flag_t                 flush;
     ngx_uint_t                 method_filter;
 } ngx_http_memcached_loc_conf_t;
 
@@ -75,6 +77,20 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
       offsetof(ngx_http_memcached_loc_conf_t, allow_put),
       NULL },
 
+    { ngx_string("memcached_stats"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, stats),
+      NULL },
+
+    { ngx_string("memcached_flush"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, flush),
+      NULL },
+    
     { ngx_string("memcached_bind"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_upstream_bind_set_slot,
@@ -868,6 +884,9 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->upstream.pass_request_body = 0;
 
     conf->allow_put = NGX_CONF_UNSET;
+    conf->stats = NGX_CONF_UNSET;
+    conf->flush = NGX_CONF_UNSET;
+
     conf->index = NGX_CONF_UNSET;
 
     return conf;
@@ -919,8 +938,26 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->allow_put == NGX_CONF_UNSET) {
       conf->allow_put = 0;
     }
+
+    if (conf->stats == NGX_CONF_UNSET) {
+      conf->stats = 0;
+    }
+
+    if (conf->flush == NGX_CONF_UNSET) {
+      conf->flush = 0;
+    }
     
-    conf->method_filter = conf->allow_put ? NGX_HTTP_GET|NGX_HTTP_HEAD|NGX_HTTP_PUT : NGX_HTTP_GET|NGX_HTTP_HEAD;
+    if ((conf->flush && conf->stats) || (conf->flush && conf->allow_put) || (conf->stats && conf->allow_put)) {
+      ngx_log_error(NGX_LOG_EMERG, cf->log, 0, "memcached configuration : stats, flush and allow put are mutually exclusive");
+      return NGX_CONF_ERROR;
+    }
+    
+    if (conf->flush || conf->stats) {
+      conf->method_filter = NGX_HTTP_GET;
+    }
+    else {
+      conf->method_filter = conf->allow_put ? NGX_HTTP_GET|NGX_HTTP_HEAD|NGX_HTTP_PUT : NGX_HTTP_GET|NGX_HTTP_HEAD;
+    }
 
     return NGX_CONF_OK;
 }
