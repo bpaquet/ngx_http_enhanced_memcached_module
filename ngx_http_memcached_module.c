@@ -9,6 +9,8 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+#include <ngx_md5.h>
+
 #ifndef NGX_UINT32_LEN
 #define NGX_UINT32_LEN (NGX_INT32_LEN - 1)
 #endif
@@ -16,6 +18,7 @@
 typedef struct {
     ngx_http_upstream_conf_t   upstream;
     ngx_int_t                  index;
+    ngx_flag_t                 hash_keys_with_md5;
     ngx_flag_t                 allow_put;
     ngx_flag_t                 stats;
     ngx_flag_t                 flush;
@@ -72,6 +75,13 @@ static ngx_command_t  ngx_http_memcached_commands[] = {
       ngx_http_memcached_pass,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
+      NULL },
+
+    { ngx_string("memcached_hash_keys_with_md5"),
+      NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_memcached_loc_conf_t, hash_keys_with_md5),
       NULL },
 
     { ngx_string("memcached_allow_put"),
@@ -298,6 +308,33 @@ ngx_http_memcached_create_buffer(ngx_http_request_t * r, size_t len)
     return cl;
 }
 
+static ngx_http_variable_value_t *
+ngx_http_memcached_md5(ngx_http_request_t * r, ngx_http_variable_value_t * v) {
+    ngx_md5_t md5_ctx;
+    u_char result[16];
+    u_char * dumped_result;
+    ngx_http_variable_value_t      *vv;
+  
+    dumped_result = (u_char *) ngx_palloc(r->pool, sizeof(result) * 2);
+    if (dumped_result == NULL) {
+      return NULL;
+    }
+    vv = (ngx_http_variable_value_t *) ngx_palloc(r->pool, sizeof(ngx_http_variable_value_t));
+    if (vv == NULL) {
+      return NULL;
+    }
+    vv->len = sizeof(result) * 2;
+    vv->data = dumped_result;
+    
+    ngx_md5_init(&md5_ctx);
+    ngx_md5_update(&md5_ctx, v->data, v->len);
+    ngx_md5_final(result, &md5_ctx);
+      
+    ngx_hex_dump(dumped_result, result, sizeof(result));
+  
+    return vv;
+}
+
 static ngx_chain_t *
 ngx_http_memcached_extract_key(ngx_http_request_t * r) {
     size_t                          len;
@@ -318,6 +355,16 @@ ngx_http_memcached_extract_key(ngx_http_request_t * r) {
         return NULL;
     }
 
+    if (mlcf->hash_keys_with_md5) {
+      ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                     "http memcached key before hash : \"%v\"", vv);
+
+      vv = ngx_http_memcached_md5(r, vv);
+      if (vv == NULL) {
+        return NULL;
+      }
+    }
+        
     escape = 2 * ngx_escape_uri(NULL, vv->data, vv->len, NGX_ESCAPE_MEMCACHED);
 
     len = vv->len + escape;
@@ -1038,6 +1085,7 @@ ngx_http_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->upstream.pass_request_headers = 0;
     conf->upstream.pass_request_body = 0;
 
+    conf->hash_keys_with_md5 = NGX_CONF_UNSET;
     conf->allow_put = NGX_CONF_UNSET;
     conf->stats = NGX_CONF_UNSET;
     conf->flush = NGX_CONF_UNSET;
@@ -1086,10 +1134,10 @@ ngx_http_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->index = prev->index;
     }
 
-    if (conf->index == NGX_CONF_UNSET) {
-        conf->index = prev->index;
+    if (conf->hash_keys_with_md5 == NGX_CONF_UNSET) {
+      conf->hash_keys_with_md5 = 0;
     }
-    
+
     if (conf->allow_put == NGX_CONF_UNSET) {
       conf->allow_put = 0;
     }
