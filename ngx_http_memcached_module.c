@@ -771,7 +771,7 @@ found:
     line.len = p - u->buffer.pos - 1;
     line.data = u->buffer.pos;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                   "memcached response: \"%V\" for key \"%V\"", &line, &ctx->key);
 
     p = u->buffer.pos;
@@ -841,7 +841,7 @@ found:
           line.len = p - last_p - 1;
           line.data = last_p;
 
-          ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+          ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "memcache stats line read : \"%V\", current response size : %d", &line, u->headers_in.content_length_n);
           
           if (ngx_strncmp(line.data, "END", sizeof("END") - 1) == 0) {
