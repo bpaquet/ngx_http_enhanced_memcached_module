@@ -3,7 +3,7 @@
 Goals
 ===
 
-This plugin is based on the standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
+This module is based on the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
 
 * Send custom http headers to client when using memcached cache. Http headers are stored in memcached, before body data.
 * Hash keys before inserting ou reading into memcached : allow to use very big keys
@@ -13,7 +13,7 @@ This plugin is based on the standard [Nginx Memcached plugin](http://wiki.nginx.
 * Get memcached'stats
 * Manage key namespaces, for partial memcached flush
 
-Note : base plugin configuration is identical to standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule).
+Note : base module configuration is identical to standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule).
 
 How to use it
 ===
@@ -28,12 +28,12 @@ Compile Nginx with option in `./configure`
 
 Rebuild Nginx, and enjoy !
 
-Note : this plugin has been tested with Nginx 1.1.14, and is used in production at [fasterize](http://www.fasterize.com)
+Note : this module has been tested with Nginx 1.1.14, and is used in production at [fasterize](http://www.fasterize.com)
 
 Base config
 ===
 
-This plugin has the same base configuration than the standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule).
+This module has the same base configuration than the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule).
 
 All commands and variables are prefixed by `enhanced`.
 
@@ -62,18 +62,19 @@ The http body will contains `<toto></toto>`.
 Before the body, line delimiters have to be `\r\n`, like in HTTP.
 
 You can add multiple headers if you need.
-If you do'nt start with `EXTRACT_HEADERS`, memcached module will only output the content in the http body. 
+If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the http body. 
 
-No modification of nginx config are needed.
+No modification of nginx config is needed.
 
 Hash keys
 ===
 
-To avoid problem with big keys in memcached, just add in config :
+Memcached keys are limited to 250 chars.
+To use bigger keys, just add in config :
 
     enhanced_memcached_hash_keys_with_md5 on;
     
-The module will hash key with md5 algorithm before inserting into memcached, and before getting from memcached.
+The enhanced memcached module will hash key with md5 algorithm before inserting into memcached, and before getting data from memcached.
 
 Store data into memcached
 ===
@@ -181,7 +182,7 @@ You can set the namespace to use with a location by adding :
 
     set $enhanced_memcached_key_namespace "$host";
 
-The plugin will use the HTTP host as namespace for the current location.
+The enhanced memached module will use the HTTP host as namespace for the current location.
 
 You can flush a namespace (in reality, it only increment the key prefix) with a location 
 
