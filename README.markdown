@@ -27,7 +27,7 @@ Compile Nginx with option in `./configure`
 
 Rebuild Nginx, and enjoy !
 
-Note : this plugin has been tested with Nginx 1.1.14
+Note : this plugin has been tested with Nginx 1.1.14, and is used in production at [fasterize](http://www.fasterize.com)
 
 Custom HTTP Headers
 ===
