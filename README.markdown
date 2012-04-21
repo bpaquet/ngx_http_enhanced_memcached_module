@@ -3,7 +3,7 @@
 Goals
 ===
 
-This plugin is based on standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
+This plugin is based on the standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
 
 * Send custom http headers to client when using memcached cache. Http headers are stored in memcached, before body data.
 * Hash keys before inserting ou reading into memcached : allow to use very big keys
@@ -29,6 +29,22 @@ Compile Nginx with option in `./configure`
 Rebuild Nginx, and enjoy !
 
 Note : this plugin has been tested with Nginx 1.1.14, and is used in production at [fasterize](http://www.fasterize.com)
+
+Base config
+===
+
+This plugin has the same base configuration than the standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule).
+
+All commands and variables are prefixed by `enhanced`.
+
+* [`enhanced_memcached_pass`](http://wiki.nginx.org/HttpMemcachedModule#memcached_pass)
+* [`enhanced_memcached_connect_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_connect_timeout)
+* [`enhanced_memcached_read_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_read_timeout)
+* [`enhanced_memcached_send_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_send_timeout)
+* [`enhanced_memcached_buffer_size`](http://wiki.nginx.org/HttpMemcachedModule#memcached_buffer_size)
+* [`enhanced_memcached_next_upstream`](http://wiki.nginx.org/HttpMemcachedModule#memcached_next_upstream)
+
+* [`$enhanced_memcached_key`](http://wiki.nginx.org/HttpMemcachedModule#.24memcached_key)
 
 Custom HTTP Headers
 ===
