@@ -25,7 +25,7 @@ Compile Nginx with option in `./configure`
     
     --add-module=/my/path/to/my/clone/ngx_http_enhanced_memcached_module
 
-Enjoy !
+Rebuild Nginx, and enjoy !
 
 Note : this plugin has been tested with Nginx 1.1.14
 
