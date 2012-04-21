@@ -3,16 +3,17 @@
 Goals
 ===
 
-Main features : 
+This plugin is based on standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
 
-* Send customs http headers to client when using memcached `module. Http headers are stored in memcached, with body data.
-* Hash keys before inserting into memcached : allow to have very big keys
-* Put data into memcached, with expire time. You can use the `add` or `set` memcached command.
+* Send custom http headers to client when using memcached cache. Http headers are stored in memcached, before body data.
+* Hash keys before inserting ou reading into memcached : allow to use very big keys
+* Store data into memcached, with expire time, through http. You can use the `add` or `set` memcached command.
 * Delete data from memcached
 * Flush memcached
 * Get memcached'stats
+* Manage key namespaces, for partial memcached flush
 
-Note : the third last features are mutually exclusive on the same nginx location.
+Note : base plugin configuration is identical to standard [Nginx Memcached plugin](http://wiki.nginx.org/HttpMemcachedModule).
 
 How to use it
 ===
@@ -58,7 +59,7 @@ To avoid problem with big keys in memcached, just add in config :
     
 The module will hash key with md5 algorithm before inserting into memcached, and before getting from memcached.
 
-Put data into memcached
+Store data into memcached
 ===
 
 Add a location in nginx config like that :
@@ -112,7 +113,7 @@ If you send an `add` command on an existing key, memcached will respond `NOT_STO
 Delete data in memcached
 ===
 
-Add a location in nginx config like that :
+To delete entries in memcached,  add a location in nginx config :
 
     location / {
       set $enhanced_memcached_key "$request_uri";
@@ -120,7 +121,7 @@ Add a location in nginx config like that :
       enhanced_memcached_pass memcached_upstream;
     }
     
-And send a DELETE HTTP request into nginx.
+And send a DELETE HTTP request to this location.
 
 Response is a HTTP code 200, with body containing the string `DELETED`, or HTTP code 404, with body `NOT_FOUND` if the key does not exist in memcached.
 
@@ -130,28 +131,47 @@ Note : It can be used with `enhanced_memcached_allow_put` in the same location
 Flush memcached
 ===
 
-Add a location in nginx config like that :
+To fully flush memcached, add a location in nginx config :
     
     location /flush {
       enhanced_memcached_flush on;
       enhanced_memcached_pass memcached_upstream;
     }
 
-And send a get request on uri /flush into nginx.
+And send a GET HTTP request on uri /flush.
 
 Response is a HTTP code 200, with body containing the string `OK`.
 
 Stats memcached
 ===
 
-Add a location in nginx config like that :
+To get memcached stats, add a location in nginx config :
 
     location /stats {
       enhanced_memcached_stats on;
       enhanced_memcached_pass memcached_upstream;
     }
 
-And send a get request on uri /stats into nginx.
+And send a GET HTTP request on uri /stats.
 
 Response is a HTTP code 200, with body containing all stats returned by memcached.
 
+Key namespaces
+===
+
+This feature is an implementation of namespaces : see the [memcached documentation](http://code.google.com/p/memcached/wiki/NewProgrammingTricks#Namespacing) for more details.
+
+You can set the namespace to use with a location by adding :
+
+    set $enhanced_memcached_key_namespace "$host";
+
+The plugin will use the HTTP host as namespace for the current location.
+
+You can flush a namespace (in reality, it only increment the key prefix) with a location 
+
+    location /flush_ns_to {
+      set $enhanced_memcached_key "$request_uri";
+      set $enhanced_memcached_key_namespace "$host";
+      enhanced_memcached_flush_namespace on;
+      enhanced_memcached_pass memcached_upstream;
+    }
