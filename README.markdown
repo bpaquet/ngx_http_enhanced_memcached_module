@@ -6,7 +6,7 @@ Goals
 This module is based on the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
 
 * Send custom http headers to client when using memcached cache. Http headers are stored in memcached, before body data.
-* Hash keys before inserting ou reading into memcached : allow to use very big keys
+* Hash keys before inserting ou reading into memcached : allow to use very large keys
 * Store data into memcached, with expire time, through http. You can use the `add` or `set` memcached command.
 * Delete data from memcached
 * Flush memcached
@@ -35,7 +35,7 @@ Base config
 
 This module has the same base configuration than the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule).
 
-All commands and variables are prefixed by `enhanced`.
+All commands and variables are prepàfixed by `enhanced`.
 
 * [`enhanced_memcached_pass`](http://wiki.nginx.org/HttpMemcachedModule#memcached_pass)
 * [`enhanced_memcached_connect_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_connect_timeout)
@@ -70,7 +70,7 @@ Hash keys
 ===
 
 Memcached keys are limited to 250 chars.
-To use bigger keys, just add in config :
+To use largest keys, just add in config :
 
     enhanced_memcached_hash_keys_with_md5 on;
     
@@ -148,7 +148,7 @@ Note : It can be used with `enhanced_memcached_allow_put` in the same location
 Flush memcached
 ===
 
-To fully flush memcached, add a location in nginx config :
+To completely flush memcached, add a location in nginx config :
     
     location /flush {
       enhanced_memcached_flush on;
