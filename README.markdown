@@ -12,6 +12,7 @@ This module is based on the standard [Nginx Memcached module](http://wiki.nginx.
 * Flush memcached
 * Get memcached'stats
 * Manage key namespaces, for partial memcached flush
+* Reply `304 Not Modified` for request with `If-Modified-Since` headers and content with `Last-Modified` in cache
 
 Note : base module configuration is identical to standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule).
 
@@ -192,3 +193,8 @@ You can flush a namespace (in reality, it only increment the key prefix) with a 
       enhanced_memcached_flush_namespace on;
       enhanced_memcached_pass memcached_upstream;
     }
+
+304 Not Modified
+===
+
+For request with HTTP Header `If-Modified-Since`, and associated resource in memcached with HTTP Headers `Last-Modified`, the module will send a 304 Not Modified if resource has not been modified, and if Nginx [configuration](http://wiki.nginx.org/HttpCoreModule#if_modified_since) allows this behaviour.
