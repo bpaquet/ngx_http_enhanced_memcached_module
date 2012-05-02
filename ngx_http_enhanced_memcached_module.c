@@ -239,10 +239,7 @@ ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
     ngx_http_enhanced_memcached_ctx_t       *ctx;
     ngx_http_enhanced_memcached_loc_conf_t  *mlcf;
     ngx_flag_t                      read_body;
-
-    if (ngx_http_set_content_type(r) != NGX_OK) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
+    ngx_flag_t                      set_default_content_type;
 
     if (ngx_http_upstream_create(r) != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
@@ -279,6 +276,7 @@ ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
     u->input_filter_ctx = ctx;
 
     read_body = 0;
+    set_default_content_type = 1;
     
     if (mlcf->flush) {
       ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_CRLF;
@@ -319,6 +317,7 @@ ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
       u->process_header = ngx_http_enhanced_memcached_process_request_delete;      
     }
     else {
+      set_default_content_type = 0;
       ctx->rest = ctx->end_len = NGX_HTTP_ENHANCED_MEMCACHED_END;
       ctx->end = ngx_http_enhanced_memcached_end;
       ctx->key_status = UNKNOWN;
@@ -327,6 +326,12 @@ ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
       u->process_header = ngx_http_enhanced_memcached_process_request_get;
     }
     
+    if (set_default_content_type) {
+      if (ngx_http_set_content_type(r) != NGX_OK) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+      }
+    }
+      
     if (read_body) {
       rc = ngx_http_read_client_request_body(r, ngx_http_upstream_init);
       if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
@@ -1156,10 +1161,13 @@ length:
         if (u->buffer.pos + NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS <= u->buffer.last
           && ngx_strncmp(u->buffer.pos, ngx_http_enhanced_memcached_extract_headers, NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS) == 0) {
           
-          ngx_table_elt_t *h;
+          ngx_table_elt_t                *h;
           ngx_int_t                       rc;
           ngx_http_upstream_main_conf_t  *umcf;
           ngx_http_upstream_header_t     *hh;
+          ngx_table_elt_t                *last_modified;
+          
+          last_modified = NULL;
           
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "extracting headers from memcached value");
@@ -1205,18 +1213,22 @@ length:
               ngx_cpystrn(h->value.data, r->header_start, h->value.len + 1);
 
               if (h->key.len == r->lowcase_index) {
-                  ngx_memcpy(h->lowcase_key, r->lowcase_header, h->key.len);
+                ngx_memcpy(h->lowcase_key, r->lowcase_header, h->key.len);
               } else {
                   ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
               }
 
               hh = ngx_hash_find(&umcf->headers_in_hash, h->hash,
-                               h->lowcase_key, h->key.len);
+                                 h->lowcase_key, h->key.len);
 
               if (hh && hh->handler(r, h, hh->offset) != NGX_OK) {
                 return NGX_ERROR;
               }
 
+              if (h->key.len == sizeof("Last-Modified") - 1 && ngx_strncmp(h->key.data, "Last-Modified", h->key.len) == 0) {
+                last_modified = h;
+              }
+              
               ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "http memcached extracted header: \"%V: %V\"",
                            &h->key, &h->value);
@@ -1231,7 +1243,7 @@ length:
               /* a whole header has been parsed successfully */
 
               ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "http memached header done");
+                           "http enhanced memached header done");
 
               /*
                * if no "Server" and "Date" in header line,
@@ -1265,6 +1277,45 @@ length:
                 h->lowcase_key = (u_char *) "date";
               }
 
+              if (last_modified != NULL && r->headers_in.if_modified_since != NULL) {
+                time_t                     ims_in;
+                time_t                     ims_memcached;
+                ngx_http_core_loc_conf_t  *clcf;
+
+                clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+
+                if (clcf->if_modified_since != NGX_HTTP_IMS_OFF) {
+                  ims_in = ngx_http_parse_time(r->headers_in.if_modified_since->value.data,
+                                            r->headers_in.if_modified_since->value.len);
+
+                  ims_memcached = ngx_http_parse_time(last_modified->value.data, last_modified->value.len);
+
+                  if (ims_in == ims_memcached || (clcf->if_modified_since != NGX_HTTP_IMS_EXACT && ims_in >= ims_memcached)) {
+                    u->headers_in.status_n = 304;
+                    u->state->status = 304;
+
+                    u->headers_in.content_length_n = -1; 
+                    if (u->headers_in.content_length) {
+                      u->headers_in.content_length->hash = 0;
+                      u->headers_in.content_length = NULL;
+                    }
+
+                    if (u->headers_in.content_type) {
+                      u->headers_in.content_type->hash = 0;
+                      u->headers_in.content_type = NULL;
+                    }
+
+                    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                                "http enhanced memached sent not modified");
+                    return NGX_OK;
+                  }
+                }
+              }
+
+              if (ngx_http_set_content_type(r) != NGX_OK) {
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+              }
+
               u->headers_in.content_length_n -= 2;
 
               u->headers_in.status_n = 200;
@@ -1287,9 +1338,14 @@ length:
             return NGX_HTTP_UPSTREAM_INVALID_HEADER;
           }
         }
+
+        if (ngx_http_set_content_type(r) != NGX_OK) {
+          return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        }
         
         u->headers_in.status_n = 200;
         u->state->status = 200;
+        u->keepalive = 1;
         
         return NGX_OK;
     }
