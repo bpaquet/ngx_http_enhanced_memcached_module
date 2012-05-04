@@ -200,3 +200,20 @@ You can flush a namespace (in reality, it only increment the key prefix) with a 
 ===
 
 For request with HTTP Header `If-Modified-Since`, and associated resource in memcached with HTTP Headers `Last-Modified`, the module will send a 304 Not Modified if resource has not been modified, and if Nginx [configuration](http://wiki.nginx.org/HttpCoreModule#if_modified_since) allows this behaviour.
+
+License
+===
+
+Copyright 2012 Bertrand Paquet / Octo Technology
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
