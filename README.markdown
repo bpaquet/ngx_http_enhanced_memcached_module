@@ -5,12 +5,12 @@ Goals
 
 This module is based on the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
 
-* Send custom http headers to client when using memcached cache. Http headers are stored in memcached, before body data.
-* Hash keys before inserting ou reading into memcached : allow to use very large keys
-* Store data into memcached, with expire time, through http. You can use the `add` or `set` memcached command.
-* Delete data from memcached
-* Flush memcached
-* Get memcached'stats
+* Send custom http headers, like `Content-Type`, `Last-Modified`. Http headers are stored in memcached, with your body data.
+* Hash keys to use large keys (> 250 chars, memcached limit)
+* Store data into memcached, via HTTP request to nginx
+* Delete data from memcached, via HTTP request to nginx
+* Flush memcached, via HTTP request to nginx
+* Get memcached'stats, via HTTP request to nginx
 * Manage key namespaces, for partial memcached flush
 * Reply `304 Not Modified` for request with `If-Modified-Since` headers and content with `Last-Modified` in cache
 
@@ -31,7 +31,7 @@ Compile Nginx with option in `./configure`
 
 Rebuild Nginx, and enjoy !
 
-Note : this module has been tested with Nginx 1.1.14, and is used in production at [fasterize](http://www.fasterize.com)
+Note : this module has been tested with Nginx 1.1.14 and Nginx 1.2.0, and is used in production at [fasterize](http://www.fasterize.com)
 
 Base config
 ===
@@ -60,7 +60,7 @@ Instead of inserting raw data in memcached, put something like that
     <toto></toto>
 
 Memcached module will set the header `Content-Type` to the specified value `text-xml` instead of the default one.
-The http body will contains `<toto></toto>`.
+The http body will only contains `<toto></toto>`.
 
 Before the body, line delimiters have to be `\r\n`, like in HTTP.
 
