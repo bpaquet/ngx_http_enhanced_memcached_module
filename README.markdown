@@ -204,7 +204,7 @@ For request with HTTP Header `If-Modified-Since`, and associated resource in mem
 License
 ===
 
-Copyright 2012 Bertrand Paquet / Octo Technology
+Copyright 2012 Bertrand Paquet
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
