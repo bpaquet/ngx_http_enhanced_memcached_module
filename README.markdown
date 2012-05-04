@@ -14,7 +14,8 @@ This module is based on the standard [Nginx Memcached module](http://wiki.nginx.
 * Manage key namespaces, for partial memcached flush
 * Reply `304 Not Modified` for request with `If-Modified-Since` headers and content with `Last-Modified` in cache
 
-You can find some explanation around why this module has been created in this [blog post](http://blog.octo.com/en/http-caching-with-nginx-and-memcached/)
+You can find some explanation around why this module has been created in this [blog post](http://blog.octo.com/en/http-caching-with-nginx-and-memcached/).
+
 Note : base module configuration is identical to standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule).
 
 How to use it
