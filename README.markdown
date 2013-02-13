@@ -3,7 +3,7 @@
 Goals
 ===
 
-This module is based on the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features : 
+This module is based on the standard [Nginx Memcached module](http://wiki.nginx.org/HttpMemcachedModule), with some additonal features :
 
 * Send custom http headers, like `Content-Type`, `Last-Modified`. Http headers are stored in memcached, with your body data.
 * Hash keys to use large keys (> 250 chars, memcached limit)
@@ -24,9 +24,9 @@ How to use it
 Clone the code
 
     git clone git://github.com/bpaquet/ngx_http_enhanced_memcached_module.git
-    
+
 Compile Nginx with option in `./configure`
-    
+
     --add-module=/my/path/to/my/clone/ngx_http_enhanced_memcached_module
 
 Rebuild Nginx, and enjoy !
@@ -56,7 +56,7 @@ Instead of inserting raw data in memcached, put something like that
 
     EXTRACT_HEADERS
     Content-Type: text/xml
-    
+
     <toto></toto>
 
 Memcached module will set the header `Content-Type` to the specified value `text-xml` instead of the default one.
@@ -64,8 +64,17 @@ The http body will only contains `<toto></toto>`.
 
 Before the body, line delimiters have to be `\r\n`, like in HTTP.
 
+Another example with special chars and two headers:
+
+    EXTRACT_HEADERS\r\n
+    Content-Type: text/html\r\n
+    Cache-Control:max-age=21600\r\n
+    \r\n
+    <html><body>toto</body></html>
+
+
 You can add multiple headers if you need.
-If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the http body. 
+If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the http body.
 
 No modification of nginx config is needed.
 
@@ -76,8 +85,8 @@ Memcached keys are limited to 250 chars.
 To use largest keys, just add in config :
 
     enhanced_memcached_hash_keys_with_md5 on;
-    
-The enhanced memcached module will hash key with md5 algorithm before inserting into memcached, and before getting data from memcached.
+
+The enhanced memcached module will hash keys with md5 algorithm before inserting into memcached, and before getting data from memcached.
 
 Store data into memcached
 ===
@@ -89,7 +98,7 @@ Add a location in nginx config like that :
       enhanced_memcached_allow_put on;
       enhanced_memcached_pass memcached_upstream;
     }
-    
+
 And send a PUT HTTP request into nginx, with body containing what you want to store in memcached, under the key $enhanced_memcached_key. The `set` memcached command is used.
 
 Response is a HTTP code 200, with body containing the string `STORED`.
@@ -104,7 +113,7 @@ To set another value, add following line to config :
 
     set $enhanced_memcached_expire 2;
 
-Or 
+Or
 
     set $enhanced_memcached_expire $http_memcached_expire;
 
@@ -119,7 +128,7 @@ If you want to use the `add` memcached command, add following line in config :
 
     set $enhanced_memcached_use_add 1;
 
-Or 
+Or
 
     set $enhanced_memcached_use_add $http_memcached_use_add;
 
@@ -140,7 +149,7 @@ To delete entries in memcached,  add a location in nginx config :
       enhanced_memcached_allow_delete on;
       enhanced_memcached_pass memcached_upstream;
     }
-    
+
 And send a DELETE HTTP request to this location.
 
 Response is a HTTP code 200, with body containing the string `DELETED`, or HTTP code 404, with body `NOT_FOUND` if the key does not exist in memcached.
@@ -152,7 +161,7 @@ Flush memcached
 ===
 
 To completely flush memcached, add a location in nginx config :
-    
+
     location /flush {
       enhanced_memcached_flush on;
       enhanced_memcached_pass memcached_upstream;
@@ -187,7 +196,7 @@ You can set the namespace to use with a location by adding :
 
 The enhanced memached module will use the HTTP host as namespace for the current location.
 
-You can flush a namespace (in reality, it only increment the key prefix) with a location 
+You can flush a namespace (in reality, it only increment the key prefix) with a location
 
     location /flush_ns_to {
       set $enhanced_memcached_key "$request_uri";
