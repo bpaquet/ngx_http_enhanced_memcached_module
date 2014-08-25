@@ -5,3 +5,4 @@ env:
   - NGINX_BUILD=1.2.9
 services:
   - memcached
+script: "cd tests && sh run.sh"
