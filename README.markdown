@@ -1,5 +1,7 @@
 # Enhanced Nginx Memached Module
 
+[![Build Status](https://travis-ci.org/bpaquet/ngx_http_enhanced_memcached_module.png)](https://travis-ci.org/bpaquet/ngx_http_enhanced_memcached_module)
+
 Goals
 ===
 
