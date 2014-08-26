@@ -28,6 +28,10 @@ kill $(cat work/nginx.pid)
 
 sleep 1
 
+if [ $res != 0 ]; then
+	cat work/logs/*.logs
+fi
+
 rm -rf work
 
 exit $res
