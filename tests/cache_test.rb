@@ -235,24 +235,24 @@ class Cache < Test::Unit::TestCase
   end
 
   def test_headers_wrong_format_no_end
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nthis content", @put_domain
+    put '/toto_wrong_format_no_end', "EXTRACT_HEADERS\r\nthis content", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end', @std_domain
     assert_equal "502", @resp.code
   end
 
   def test_wrong_format_no_end_with_one_header_ok
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nX-Toto: tata\r\nthis toto", @put_domain
+    put '/toto_wrong_format_no_end_with_one_header_ok', "EXTRACT_HEADERS\r\nX-Toto: tata\r\nthis toto", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end_with_one_header_ok', @std_domain
     assert_equal "502", @resp.code
     assert_nil @resp['X-Toto']
   end
 
   def test_wrong_format_no_end_with_jquery
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nthis toto", @put_domain
+    put '/toto_wrong_format_no_end_with_jquery', "EXTRACT_HEADERS\r\nthis toto", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end_with_jquery', @std_domain
     assert_equal "502", @resp.code
     jq = load_bin_file('jquery-1.6.4.js')
     put '/jq', "EXTRACT_HEADERS\r\nContent-Type: text/javascript\r\n\r\n" + jq, @put_domain
@@ -267,23 +267,23 @@ class Cache < Test::Unit::TestCase
   end
 
   def test_wrong_format_no_end_with_colon
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nthis toto:", @put_domain
+    put '/toto_wrong_format_no_end_with_colon', "EXTRACT_HEADERS\r\nthis toto:", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end_with_colon', @std_domain
     assert_equal "502", @resp.code
   end
 
   def test_wrong_format_no_end_with_colon_and_text
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nX-toto: titi", @put_domain
+    put '/toto_wrong_format_no_end_with_colon_and_text', "EXTRACT_HEADERS\r\nX-toto: titi", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end_with_colon_and_text', @std_domain
     assert_equal "502", @resp.code
   end
 
   def test_wrong_format_no_end_with_colon_and_text2
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\nthis toto: titi", @put_domain
+    put '/toto_wrong_format_no_end_with_colon_and_text2', "EXTRACT_HEADERS\r\nthis toto: titi", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_end_with_colon_and_text2', @std_domain
     assert_equal "502", @resp.code
   end
 
@@ -296,9 +296,9 @@ class Cache < Test::Unit::TestCase
   end
 
   def test_headers_wrong_format_no_content
-    put '/toto_wrong_format', "EXTRACT_HEADERS\r\na", @put_domain
+    put '/toto_wrong_format_no_content', "EXTRACT_HEADERS\r\na", @put_domain
     assert_stored
-    get '/toto_wrong_format', @std_domain
+    get '/toto_wrong_format_no_content', @std_domain
     assert_equal "502", @resp.code
   end
 
