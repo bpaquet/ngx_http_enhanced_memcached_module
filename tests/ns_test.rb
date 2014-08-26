@@ -5,7 +5,7 @@ require 'digest/sha1'
 require File.join(File.dirname(__FILE__), 'http_test_helper.rb')
 require File.join(File.dirname(__FILE__), 'zlib_helper.rb')
 
-class Cache < Test::Unit::TestCase
+class NS < Test::Unit::TestCase
 
   include HttpTestHelper
 
