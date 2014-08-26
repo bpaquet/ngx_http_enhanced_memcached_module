@@ -15,7 +15,7 @@ if [ "$NGINX_BUILD" != "" ]; then
 	wget http://nginx.org/download/nginx-$NGINX_BUILD.tar.gz
 	tar xvzf nginx-$NGINX_BUILD.tar.gz
 	cd nginx-$NGINX_BUILD
-	./configure --add-module=../../../../ngx_http_enhanced_memcached_module
+	./configure --with-debug --add-module=../../../../ngx_http_enhanced_memcached_module
 	make
 	export NGINX_BIN=$(pwd)/objs/nginx
 	set +e
