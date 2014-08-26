@@ -6,6 +6,8 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
+memcached -h
+ps axu | grep memcached
 rm -rf work
 mkdir work
 mkdir work/logs
@@ -36,6 +38,6 @@ if [ $res != 0 ]; then
 	cat work/logs/*.log
 fi
 
-rm -rf work
+# rm -rf work
 
 exit $res
