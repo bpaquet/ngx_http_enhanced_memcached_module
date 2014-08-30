@@ -441,4 +441,21 @@ class NS < Test::Unit::TestCase
     assert_nil @resp.body
   end
 
+  def test_html_small
+    html = load_bin_file('small.html')
+    put '/html', "EXTRACT_HEADERS\r\nContent-Type: text/html\r\n\r\n" + html, @put_domain
+    assert_stored
+    get '/html', @std_domain
+    assert_last_response "200", "text/html", html
+  end
+
+
+  def test_html_28k
+    html = load_bin_file('issue.html')
+    put '/html', "EXTRACT_HEADERS\r\nContent-Type: text/html\r\n\r\n" + html, @put_domain
+    assert_stored
+    get '/html', @std_domain
+    assert_last_response "200", "text/html", html
+  end
+
 end

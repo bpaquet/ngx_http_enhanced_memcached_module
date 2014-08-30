@@ -36,10 +36,10 @@ kill $(cat work/nginx.pid)
 
 sleep 1
 
-if [ $res != 0 ]; then
-	# curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/error.log -H 'Content-type: application/octet-stream'
-	# curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
-fi
+# if [ $res != 0 ]; then
+# 	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/error.log -H 'Content-type: application/octet-stream'
+# 	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
+# fi
 
 rm -rf work
 

@@ -1,0 +1,621 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en" class="   ">
+  <head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# object: http://ogp.me/ns/object# article: http://ogp.me/ns/article# profile: http://ogp.me/ns/profile#">
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Language" content="en">
+    
+    
+    <title>Issue with cache size · Issue #2 · bpaquet/ngx_http_enhanced_memcached_module · GitHub</title>
+    <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="GitHub">
+    <link rel="fluid-icon" href="https://github.com/fluidicon.png" title="GitHub">
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144.png">
+    <meta property="fb:app_id" content="1401488693436528">
+
+      <meta content="@github" name="twitter:site" /><meta content="summary" name="twitter:card" /><meta content="bpaquet/ngx_http_enhanced_memcached_module" name="twitter:title" /><meta content="ngx_http_enhanced_memcached_module - Use memcached to do cache into nginx, with lot of advanced features" name="twitter:description" /><meta content="https://avatars0.githubusercontent.com/u/337117?v=2&amp;s=400" name="twitter:image:src" />
+<meta content="GitHub" property="og:site_name" /><meta content="object" property="og:type" /><meta content="https://avatars0.githubusercontent.com/u/337117?v=2&amp;s=400" property="og:image" /><meta content="bpaquet/ngx_http_enhanced_memcached_module" property="og:title" /><meta content="https://github.com/bpaquet/ngx_http_enhanced_memcached_module" property="og:url" /><meta content="ngx_http_enhanced_memcached_module - Use memcached to do cache into nginx, with lot of advanced features" property="og:description" />
+
+    <link rel="assets" href="https://assets-cdn.github.com/">
+    <link rel="conduit-xhr" href="https://ghconduit.com:25035">
+    
+
+    <meta name="msapplication-TileImage" content="/windows-tile.png">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="selected-link" value="repo_issues" data-pjax-transient>
+      <meta name="google-analytics" content="UA-3769691-2">
+
+    <meta content="collector.githubapp.com" name="octolytics-host" /><meta content="collector-cdn.github.com" name="octolytics-script-host" /><meta content="github" name="octolytics-app-id" /><meta content="524241AD:0874:2D79E8E2:5401C877" name="octolytics-dimension-request_id" />
+    
+
+    
+    
+    <link rel="icon" type="image/x-icon" href="https://assets-cdn.github.com/favicon.ico">
+
+
+    <meta content="authenticity_token" name="csrf-param" />
+<meta content="JIvcMgmY9rO+S15bkXzzccZlZdYmXmQRwlkP5yBbrcDCpyCSV7jC0tw9k++2QmK8QtT4pRJQv6AgNk1LfkqvzQ==" name="csrf-token" />
+
+    <link href="https://assets-cdn.github.com/assets/github-4639ea1be0488097a4de96192d42b7e8595a1b2d.css" media="all" rel="stylesheet" type="text/css" />
+    <link href="https://assets-cdn.github.com/assets/github2-77a12dbff370498e7105b03f9140296f10c4cc26.css" media="all" rel="stylesheet" type="text/css" />
+    
+
+
+    <meta http-equiv="x-pjax-version" content="dd5e4c12689a7f193be8d0336b24b8b6">
+
+      
+  <meta name="description" content="ngx_http_enhanced_memcached_module - Use memcached to do cache into nginx, with lot of advanced features">
+  <meta name="go-import" content="github.com/bpaquet/ngx_http_enhanced_memcached_module git https://github.com/bpaquet/ngx_http_enhanced_memcached_module.git">
+
+  <meta content="337117" name="octolytics-dimension-user_id" /><meta content="bpaquet" name="octolytics-dimension-user_login" /><meta content="3333422" name="octolytics-dimension-repository_id" /><meta content="bpaquet/ngx_http_enhanced_memcached_module" name="octolytics-dimension-repository_nwo" /><meta content="true" name="octolytics-dimension-repository_public" /><meta content="false" name="octolytics-dimension-repository_is_fork" /><meta content="3333422" name="octolytics-dimension-repository_network_root_id" /><meta content="bpaquet/ngx_http_enhanced_memcached_module" name="octolytics-dimension-repository_network_root_nwo" />
+  <link href="https://github.com/bpaquet/ngx_http_enhanced_memcached_module/commits/master.atom" rel="alternate" title="Recent Commits to ngx_http_enhanced_memcached_module:master" type="application/atom+xml">
+
+  </head>
+
+
+  <body class="logged_out  env-production macintosh vis-public">
+    <a href="#start-of-content" tabindex="1" class="accessibility-aid js-skip-to-content">Skip to content</a>
+    <div class="wrapper">
+      
+      
+      
+      
+
+
+      
+      <div class="header header-logged-out">
+  <div class="container clearfix">
+
+    <a class="header-logo-wordmark" href="https://github.com/">
+      <span class="mega-octicon octicon-logo-github"></span>
+    </a>
+
+    <div class="header-actions">
+        <a class="button primary" href="/join">Sign up</a>
+      <a class="button signin" href="/login?return_to=%2Fbpaquet%2Fngx_http_enhanced_memcached_module%2Fissues%2F2">Sign in</a>
+    </div>
+
+    <div class="site-search repo-scope js-site-search">
+      <form accept-charset="UTF-8" action="/bpaquet/ngx_http_enhanced_memcached_module/search" class="js-site-search-form" data-global-search-url="/search" data-repo-search-url="/bpaquet/ngx_http_enhanced_memcached_module/search" method="get"><div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" /></div>
+  <input type="text"
+    class="js-site-search-field is-clearable"
+    data-hotkey="s"
+    name="q"
+    placeholder="Search"
+    data-global-scope-placeholder="Search GitHub"
+    data-repo-scope-placeholder="Search"
+    tabindex="1"
+    autocapitalize="off">
+  <div class="scope-badge">This repository</div>
+</form>
+    </div>
+
+      <ul class="header-nav left">
+          <li class="header-nav-item">
+            <a class="header-nav-link" href="/explore">Explore</a>
+          </li>
+          <li class="header-nav-item">
+            <a class="header-nav-link" href="/features">Features</a>
+          </li>
+          <li class="header-nav-item">
+            <a class="header-nav-link" href="https://enterprise.github.com/">Enterprise</a>
+          </li>
+          <li class="header-nav-item">
+            <a class="header-nav-link" href="/blog">Blog</a>
+          </li>
+      </ul>
+
+  </div>
+</div>
+
+
+
+      <div id="start-of-content" class="accessibility-aid"></div>
+          <div class="site" itemscope itemtype="http://schema.org/WebPage">
+    <div id="js-flash-container">
+      
+    </div>
+    <div class="pagehead repohead instapaper_ignore readability-menu">
+      <div class="container">
+        
+<ul class="pagehead-actions">
+
+
+  <li>
+      <a href="/login?return_to=%2Fbpaquet%2Fngx_http_enhanced_memcached_module"
+    class="minibutton with-count star-button tooltipped tooltipped-n"
+    aria-label="You must be signed in to star a repository" rel="nofollow">
+    <span class="octicon octicon-star"></span>
+    Star
+  </a>
+
+    <a class="social-count js-social-count" href="/bpaquet/ngx_http_enhanced_memcached_module/stargazers">
+      79
+    </a>
+
+  </li>
+
+    <li>
+      <a href="/login?return_to=%2Fbpaquet%2Fngx_http_enhanced_memcached_module"
+        class="minibutton with-count js-toggler-target fork-button tooltipped tooltipped-n"
+        aria-label="You must be signed in to fork a repository" rel="nofollow">
+        <span class="octicon octicon-repo-forked"></span>
+        Fork
+      </a>
+      <a href="/bpaquet/ngx_http_enhanced_memcached_module/network" class="social-count">
+        16
+      </a>
+    </li>
+</ul>
+
+        <h1 itemscope itemtype="http://data-vocabulary.org/Breadcrumb" class="entry-title public">
+          <span class="mega-octicon octicon-repo"></span>
+          <span class="author"><a href="/bpaquet" class="url fn" itemprop="url" rel="author"><span itemprop="title">bpaquet</span></a></span><!--
+       --><span class="path-divider">/</span><!--
+       --><strong><a href="/bpaquet/ngx_http_enhanced_memcached_module" class="js-current-repository js-repo-home-link">ngx_http_enhanced_memcached_module</a></strong>
+
+          <span class="page-context-loader">
+            <img alt="" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+          </span>
+
+        </h1>
+      </div><!-- /.container -->
+    </div><!-- /.repohead -->
+
+    <div class="container">
+      <div class="repository-with-sidebar repo-container new-discussion-timeline  ">
+        <div class="repository-sidebar clearfix">
+            
+<div class="sunken-menu vertical-right repo-nav js-repo-nav js-repository-container-pjax js-octicon-loaders" data-issue-count-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/counts">
+  <div class="sunken-menu-contents">
+    <ul class="sunken-menu-group">
+      <li class="tooltipped tooltipped-w" aria-label="Code">
+        <a href="/bpaquet/ngx_http_enhanced_memcached_module" aria-label="Code" class="js-selected-navigation-item sunken-menu-item" data-hotkey="g c" data-pjax="true" data-selected-links="repo_source repo_downloads repo_commits repo_releases repo_tags repo_branches /bpaquet/ngx_http_enhanced_memcached_module">
+          <span class="octicon octicon-code"></span> <span class="full-word">Code</span>
+          <img alt="" class="mini-loader" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+</a>      </li>
+
+        <li class="tooltipped tooltipped-w" aria-label="Issues">
+          <a href="/bpaquet/ngx_http_enhanced_memcached_module/issues" aria-label="Issues" class="selected js-selected-navigation-item sunken-menu-item js-disable-pjax" data-hotkey="g i" data-selected-links="repo_issues repo_labels repo_milestones /bpaquet/ngx_http_enhanced_memcached_module/issues">
+            <span class="octicon octicon-issue-opened"></span> <span class="full-word">Issues</span>
+            <span class="js-issue-replace-counter"></span>
+            <img alt="" class="mini-loader" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+</a>        </li>
+
+      <li class="tooltipped tooltipped-w" aria-label="Pull Requests">
+        <a href="/bpaquet/ngx_http_enhanced_memcached_module/pulls" aria-label="Pull Requests" class="js-selected-navigation-item sunken-menu-item js-disable-pjax" data-hotkey="g p" data-selected-links="repo_pulls /bpaquet/ngx_http_enhanced_memcached_module/pulls">
+            <span class="octicon octicon-git-pull-request"></span> <span class="full-word">Pull Requests</span>
+            <span class="js-pull-replace-counter"></span>
+            <img alt="" class="mini-loader" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+</a>      </li>
+
+
+    </ul>
+    <div class="sunken-menu-separator"></div>
+    <ul class="sunken-menu-group">
+
+      <li class="tooltipped tooltipped-w" aria-label="Pulse">
+        <a href="/bpaquet/ngx_http_enhanced_memcached_module/pulse/weekly" aria-label="Pulse" class="js-selected-navigation-item sunken-menu-item" data-pjax="true" data-selected-links="pulse /bpaquet/ngx_http_enhanced_memcached_module/pulse/weekly">
+          <span class="octicon octicon-pulse"></span> <span class="full-word">Pulse</span>
+          <img alt="" class="mini-loader" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+</a>      </li>
+
+      <li class="tooltipped tooltipped-w" aria-label="Graphs">
+        <a href="/bpaquet/ngx_http_enhanced_memcached_module/graphs" aria-label="Graphs" class="js-selected-navigation-item sunken-menu-item" data-pjax="true" data-selected-links="repo_graphs repo_contributors /bpaquet/ngx_http_enhanced_memcached_module/graphs">
+          <span class="octicon octicon-graph"></span> <span class="full-word">Graphs</span>
+          <img alt="" class="mini-loader" height="16" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-32.gif" width="16" />
+</a>      </li>
+    </ul>
+
+
+  </div>
+</div>
+
+              <div class="only-with-full-nav">
+                
+  
+<div class="clone-url open"
+  data-protocol-type="http"
+  data-url="/users/set_protocol?protocol_selector=http&amp;protocol_type=clone">
+  <h3><span class="text-emphasized">HTTPS</span> clone URL</h3>
+  <div class="input-group">
+    <input type="text" class="input-mini input-monospace js-url-field"
+           value="https://github.com/bpaquet/ngx_http_enhanced_memcached_module.git" readonly="readonly">
+    <span class="input-group-button">
+      <button aria-label="Copy to clipboard" class="js-zeroclipboard minibutton zeroclipboard-button" data-clipboard-text="https://github.com/bpaquet/ngx_http_enhanced_memcached_module.git" data-copied-hint="Copied!" type="button"><span class="octicon octicon-clippy"></span></button>
+    </span>
+  </div>
+</div>
+
+  
+<div class="clone-url "
+  data-protocol-type="subversion"
+  data-url="/users/set_protocol?protocol_selector=subversion&amp;protocol_type=clone">
+  <h3><span class="text-emphasized">Subversion</span> checkout URL</h3>
+  <div class="input-group">
+    <input type="text" class="input-mini input-monospace js-url-field"
+           value="https://github.com/bpaquet/ngx_http_enhanced_memcached_module" readonly="readonly">
+    <span class="input-group-button">
+      <button aria-label="Copy to clipboard" class="js-zeroclipboard minibutton zeroclipboard-button" data-clipboard-text="https://github.com/bpaquet/ngx_http_enhanced_memcached_module" data-copied-hint="Copied!" type="button"><span class="octicon octicon-clippy"></span></button>
+    </span>
+  </div>
+</div>
+
+
+<p class="clone-options">You can clone with
+      <a href="#" class="js-clone-selector" data-protocol="http">HTTPS</a>
+      or <a href="#" class="js-clone-selector" data-protocol="subversion">Subversion</a>.
+  <a href="https://help.github.com/articles/which-remote-url-should-i-use" class="help tooltipped tooltipped-n" aria-label="Get help on which URL is right for you.">
+    <span class="octicon octicon-question"></span>
+  </a>
+</p>
+
+  <a href="http://mac.github.com" data-url="github-mac://openRepo/https://github.com/bpaquet/ngx_http_enhanced_memcached_module" class="minibutton sidebar-button js-conduit-rewrite-url" title="Save bpaquet/ngx_http_enhanced_memcached_module to your computer and use it in GitHub Desktop." aria-label="Save bpaquet/ngx_http_enhanced_memcached_module to your computer and use it in GitHub Desktop.">
+    <span class="octicon octicon-device-desktop"></span>
+    Clone in Desktop
+  </a>
+
+
+                <a href="/bpaquet/ngx_http_enhanced_memcached_module/archive/master.zip"
+                   class="minibutton sidebar-button"
+                   aria-label="Download bpaquet/ngx_http_enhanced_memcached_module as a zip file"
+                   title="Download bpaquet/ngx_http_enhanced_memcached_module as a zip file"
+                   rel="nofollow">
+                  <span class="octicon octicon-cloud-download"></span>
+                  Download ZIP
+                </a>
+              </div>
+        </div><!-- /.repository-sidebar -->
+
+        <div id="js-repo-pjax-container" class="repository-content context-loader-container" data-pjax-container>
+          
+<style type="text/css" media="screen">
+  
+</style>
+
+<div class="issues-listing" data-pjax>
+
+    <div id="issues-container" class="context-loader-container" data-pjax-container>
+          <div class="context-loader large-format-loader">
+  <p><img alt="" height="64" src="https://assets-cdn.github.com/images/spinners/octocat-spinner-128.gif" width="64" /></p>
+  <p>Loading…</p>
+</div>
+
+      <div id="show_issue" class="js-issues-results">
+
+    
+  <div
+    id="partial-discussion-header"
+    class="gh-header js-details-container js-socket-channel js-updatable-content issue"
+    data-channel="bpaquet/ngx_http_enhanced_memcached_module:issue:13335489"
+    data-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=title">
+
+  <div class="gh-header-show ">
+    <div class="gh-header-actions">
+
+        <a href="/bpaquet/ngx_http_enhanced_memcached_module/issues/new" class="minibutton primary" data-hotkey="c">
+          New issue
+        </a>
+    </div>
+
+    <h1 class="gh-header-title">
+      <span class="js-issue-title">Issue with cache size</span>
+      <span class="gh-header-number">#2</span>
+    </h1>
+  </div>
+
+
+  <div class="flex-table gh-header-meta">
+    <div class="flex-table-item">
+        <div class="state state-open">
+          <span class="octicon octicon-issue-opened"></span>
+          Open
+        </div>
+    </div>
+    <div class="flex-table-item flex-table-item-primary">
+        <a href="/MGD86" class="author">MGD86</a> opened this <span class="noun">Issue</span> <time datetime="2013-04-17T23:10:09-07:00" is="relative-time">April 17, 2013</time>
+        &middot; 1 comment
+    </div>
+  </div>
+</div>
+
+
+    <div id="discussion_bucket" class="tab-content clearfix">
+      <div class="discussion-sidebar">
+        <div id="partial-discussion-stats"
+     class="discussion-stats js-socket-channel js-updatable-content"
+     data-channel="bpaquet/ngx_http_enhanced_memcached_module:issue:13335489"
+     data-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=discussion_stats">
+</div>
+
+<div class="discussion-sidebar-item sidebar-labels">
+  <div class="select-menu label-select-menu js-issue-show-label-select-menu js-menu-container js-select-menu" data-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/labels/modify_assignment" data-multiple>
+    <form accept-charset="UTF-8" action="/bpaquet/ngx_http_enhanced_memcached_module/issues/labels/modify_assignment" method="post"><div style="margin:0;padding:0;display:inline"><input name="utf8" type="hidden" value="&#x2713;" /><input name="_method" type="hidden" value="put" /><input name="authenticity_token" type="hidden" value="m6/UJM103tb3dfDINSxggRouy70TfzQcZNKtx3069HSqbDmP4P7up4yDhUlDCDWaioDwuZv3epjWDzOuhgQ4Cw==" /></div>
+      <div class="select-menu-modal-holder js-menu-content js-navigation-container" aria-hidden="true">
+
+  <div class="select-menu-modal">
+    <div class="select-menu-header">
+      <span class="select-menu-title">Apply labels to this issue</span>
+      <span class="octicon octicon-x js-menu-close" role="button" aria-label="Close"></span>
+    </div> <!-- /.select-menu-header -->
+
+    <div class="select-menu-filters">
+      <div class="select-menu-text-filter">
+        <input type="text" id="label-filter-field" class="js-filterable-field js-navigation-enable" placeholder="Filter labels" autocomplete="off">
+      </div>
+    </div> <!-- /.select-menu-filters -->
+
+    <div class="select-menu-list" data-filterable-for="label-filter-field" data-filterable-type="substring">
+
+
+    </div> <!-- /.select-menu-list -->
+
+    <div class="select-menu-no-results">Nothing to show</div>
+
+
+    <div class="select-menu-loading-overlay">Loading…</div>
+  </div> <!-- /.select-menu-modal -->
+</div> <!-- /.select-menu-modal-holder -->
+
+      <input type="hidden" class="js-issue-number" name="issues[]" value="2">
+
+        <h3 class="discussion-sidebar-heading">
+          Labels
+        </h3>
+</form>  </div>
+
+  <div class="labels css-truncate js-timeline-label-list"></div>
+</div>
+
+<div class="discussion-sidebar-item sidebar-milestone">
+  <div class="select-menu js-menu-container js-select-menu js-milestone-picker is-showing-clear-item js-load-contents" data-contents-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=milestone_select_menu">
+      <h3 class="discussion-sidebar-heading">
+        Milestone
+      </h3>
+
+  </div>
+
+  <span class="js-milestone-infobar-item-wrapper">
+      <span class="text-muted">No milestone</span>
+
+  </span>
+</div>
+
+<div class="discussion-sidebar-item sidebar-assignee">
+  <div class="select-menu js-menu-container js-select-menu js-assignee-picker js-assignee-picker-next  js-load-contents" data-contents-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=assignee_select_menu">
+      <h3 class="discussion-sidebar-heading">
+        Assignee
+      </h3>
+
+  </div>
+
+  <span class="css-truncate js-assignee-infobar-item-wrapper">
+      <span class="text-muted">No one assigned</span>
+  </span>
+</div>
+
+
+<div id="partial-users-participants" class="discussion-sidebar-item js-socket-channel js-updatable-content"
+    data-channel="bpaquet/ngx_http_enhanced_memcached_module:issue:13335489"
+      data-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=participants"
+  >
+  <div class="participation">
+
+    <h3 class="discussion-sidebar-heading">
+      2 participants
+    </h3>
+    <div class="participation-avatars">
+        <a class="participant-avatar tooltipped tooltipped-s" aria-label="MGD86" href="/MGD86"><img alt="MGD86" class="avatar" data-user="1136200" height="20" src="https://avatars2.githubusercontent.com/u/1136200?v=2&amp;s=40" width="20" /></a>
+        <a class="participant-avatar tooltipped tooltipped-s" aria-label="bpaquet" href="/bpaquet"><img alt="Bertrand Paquet" class="avatar" data-user="337117" height="20" src="https://avatars1.githubusercontent.com/u/337117?v=2&amp;s=40" width="20" /></a>
+    </div>
+  </div>
+</div>
+
+
+
+
+      </div>
+
+      <div class="discussion-timeline js-quote-selection-container">
+
+        <div class="js-discussion js-socket-channel" data-channel="bpaquet/ngx_http_enhanced_memcached_module:marked-as-read:13335489">
+          
+
+  <div class="timeline-comment-wrapper js-comment-container">
+    <a href="/MGD86"><img alt="MGD86" class="timeline-comment-avatar" data-user="1136200" height="48" src="https://avatars2.githubusercontent.com/u/1136200?v=2&amp;s=96" width="48" /></a>
+    <div id="issue-13335489"
+     class="comment timeline-comment js-comment js-task-list-container "
+     data-body-version="71a4ffb3eb1a13bdec8ded0dc128354a">
+
+  <div class="timeline-comment-header ">
+
+
+
+
+  <div class="timeline-comment-header-text">
+
+    <strong>
+      <a href="/MGD86" class="author">MGD86</a>
+    </strong>
+
+    commented
+
+    <a href="#issue-13335489" class="timestamp">
+      <time datetime="2013-04-17T23:10:09-07:00" is="relative-time">April 17, 2013</time>
+    </a>
+  </div>
+</div>
+
+
+  <div class="comment-content">
+
+    <div class="edit-comment-hide">
+      <div class="comment-body markdown-body markdown-format js-comment-body">
+          <p>Hello. First of all thanks for great module.<br>
+I try to use it for caching whole pages, but I've encountered the following issue: when page size less then 1kb caching works fine, but when page becomes bigger, nginx stops displaying html. Instead it offers download "application/octet-stream" file (despite of the header "Content-type: text/html;")</p>
+
+<p>Is there any limitation for caching value? Did I miss some config properties for nginx, memcached or something else ? I will appreciate of any clue. Thanks.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  </div>
+  <div class="timeline-comment-wrapper js-comment-container">
+    <a href="/bpaquet"><img alt="Bertrand Paquet" class="timeline-comment-avatar" data-user="337117" height="48" src="https://avatars1.githubusercontent.com/u/337117?v=2&amp;s=96" width="48" /></a>
+    <div id="issuecomment-16883414"
+     class="comment timeline-comment js-comment js-task-list-container owner-comment"
+     data-body-version="48ac25da611494fc2c35cbabfa235760">
+
+  <div class="timeline-comment-header ">
+
+
+    <span class="timeline-comment-label">Owner</span>
+
+
+  <div class="timeline-comment-header-text">
+
+    <strong>
+      <a href="/bpaquet" class="author">bpaquet</a>
+    </strong>
+
+    commented
+
+    <a href="#issuecomment-16883414" class="timestamp">
+      <time datetime="2013-04-23T13:15:12-07:00" is="relative-time">April 23, 2013</time>
+    </a>
+  </div>
+</div>
+
+
+  <div class="comment-content">
+
+    <div class="edit-comment-hide">
+      <div class="comment-body markdown-body markdown-format js-comment-body">
+          <p>Very strange. I will try to reproduce it when I find some times. Can you copy and paste your config ?</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  </div>
+
+
+
+<!-- Rendered timeline since 2013-04-23 13:15:12 -->
+<div id="partial-timeline-marker"
+      class="js-timeline-marker js-socket-channel js-updatable-content"
+      data-channel="bpaquet/ngx_http_enhanced_memcached_module:issue:13335489"
+      data-url="/bpaquet/ngx_http_enhanced_memcached_module/issues/2/show_partial?partial=timeline_marker&amp;since=1366748112"
+      data-mark-as-read-url="/bpaquet/ngx_http_enhanced_memcached_module/notifications/mark?ids=9856921"
+      data-last-modified="Tue, 23 Apr 2013 20:15:12 GMT">
+</div>
+
+
+        </div>
+
+        <div class="discussion-timeline-actions">
+              <div class="signed-out-comment">
+	<a href="/join" class="button primary" rel="nofollow">Sign up for free</a>
+	<strong>to join this conversation on GitHub</strong>.
+	Already have an account?
+	<a href="/login?return_to=%2Fbpaquet%2Fngx_http_enhanced_memcached_module%2Fissues%2F2" rel="nofollow">Sign in to comment</a>
+</div>
+
+
+        </div>
+      </div>
+
+    </div>
+    <div class="clear"></div>
+  </div>
+
+
+    </div>
+</div>
+
+
+        </div>
+
+      </div><!-- /.repo-container -->
+      <div class="modal-backdrop"></div>
+    </div><!-- /.container -->
+  </div><!-- /.site -->
+
+
+    </div><!-- /.wrapper -->
+
+      <div class="container">
+  <div class="site-footer">
+    <ul class="site-footer-links right">
+      <li><a href="https://status.github.com/">Status</a></li>
+      <li><a href="http://developer.github.com">API</a></li>
+      <li><a href="http://training.github.com">Training</a></li>
+      <li><a href="http://shop.github.com">Shop</a></li>
+      <li><a href="/blog">Blog</a></li>
+      <li><a href="/about">About</a></li>
+
+    </ul>
+
+    <a href="/" aria-label="Homepage">
+      <span class="mega-octicon octicon-mark-github" title="GitHub"></span>
+    </a>
+
+    <ul class="site-footer-links">
+      <li>&copy; 2014 <span title="0.03878s from github-fe132-cp1-prd.iad.github.net">GitHub</span>, Inc.</li>
+        <li><a href="/site/terms">Terms</a></li>
+        <li><a href="/site/privacy">Privacy</a></li>
+        <li><a href="/security">Security</a></li>
+        <li><a href="/contact">Contact</a></li>
+    </ul>
+  </div><!-- /.site-footer -->
+</div><!-- /.container -->
+
+
+    <div class="fullscreen-overlay js-fullscreen-overlay" id="fullscreen_overlay">
+  <div class="fullscreen-container js-suggester-container">
+    <div class="textarea-wrap">
+      <textarea name="fullscreen-contents" id="fullscreen-contents" class="fullscreen-contents js-fullscreen-contents js-suggester-field" placeholder=""></textarea>
+          <div class="suggester-container">
+              <div class="suggester fullscreen-suggester js-suggester js-navigation-container"
+                 data-url="/bpaquet/ngx_http_enhanced_memcached_module/suggestions/issue/13335489">
+              </div>
+          </div>
+    </div>
+  </div>
+  <div class="fullscreen-sidebar">
+    <a href="#" class="exit-fullscreen js-exit-fullscreen tooltipped tooltipped-w" aria-label="Exit Zen Mode">
+      <span class="mega-octicon octicon-screen-normal"></span>
+    </a>
+    <a href="#" class="theme-switcher js-theme-switcher tooltipped tooltipped-w"
+      aria-label="Switch themes">
+      <span class="octicon octicon-color-mode"></span>
+    </a>
+  </div>
+</div>
+
+
+
+    <div id="ajax-error-message" class="flash flash-error">
+      <span class="octicon octicon-alert"></span>
+      <a href="#" class="octicon octicon-x close js-ajax-error-dismiss" aria-label="Dismiss error"></a>
+      Something went wrong with that request. Please try again.
+    </div>
+
+
+      <script crossorigin="anonymous" src="https://assets-cdn.github.com/assets/frameworks-bc28a4f6b05fd6cd91bbc92310bbbc53e54c6ec2.js" type="text/javascript"></script>
+      <script async="async" crossorigin="anonymous" src="https://assets-cdn.github.com/assets/github-46193212c1e9feb8753d1ecfdfcfad0a23a015d2.js" type="text/javascript"></script>
+      
+      
+        <script async src="https://www.google-analytics.com/analytics.js"></script>
+  </body>
+</html>
+
