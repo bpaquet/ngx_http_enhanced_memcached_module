@@ -27,7 +27,7 @@ cp nginx.conf work
 $NGINX_BIN -p $(pwd)/work -c nginx.conf
 sleep 1
 
-ruby simple_test.rb && ruby ns_test.rb
+ruby simple_test.rb -v && ruby ns_test.rb -v
 res=$?
 
 kill $(cat work/nginx.pid)
