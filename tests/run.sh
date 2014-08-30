@@ -6,19 +6,18 @@ if [ $? != 0 ]; then
 	exit 1
 fi
 
-memcached -h
-ps axu | grep memcached
 rm -rf work
 mkdir work
 mkdir work/logs
 if [ "$NGINX_BUILD" != "" ]; then
 	set -e
 	cd work
+	echo "Building nginx $NGINX_BUILD"
 	wget http://nginx.org/download/nginx-$NGINX_BUILD.tar.gz
 	tar xvzf nginx-$NGINX_BUILD.tar.gz
 	cd nginx-$NGINX_BUILD
-	./configure --with-debug --add-module=../../../../ngx_http_enhanced_memcached_module
-	make
+	./configure --with-debug --add-module=../../../../ngx_http_enhanced_memcached_module > build.log
+	make > build.log
 	export NGINX_BIN=$(pwd)/objs/nginx
 	set +e
 	cd ../../
@@ -35,9 +34,9 @@ kill $(cat work/nginx.pid)
 sleep 1
 
 if [ $res != 0 ]; then
-	curl -v -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/error.log -H 'Content-type: application/octet-stream'
-	curl -v -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
-fi	
+	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/error.log -H 'Content-type: application/octet-stream'
+	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
+fi
 
 rm -rf work
 
