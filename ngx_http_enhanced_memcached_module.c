@@ -1319,7 +1319,7 @@ length:
 
     if (u->buffer.pos + sizeof("END") - 1 <= u->buffer.last && ngx_strncmp(u->buffer.pos, "END", sizeof("END") - 1) == 0) {
         ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "enhanced memcached: key not found : \"%V\"", &ctx->key);
+                       "enhanced memcached: key not found: \"%V\"", &ctx->key);
 
         u->headers_in.status_n = 404;
         u->state->status = 404;
@@ -1538,7 +1538,9 @@ ngx_http_enhanced_memcached_filter_init(void *data)
 
     u = ctx->request->upstream;
 
-    u->length += ctx->end_len;
+    if (u->headers_in.status_n != 404) {
+        u->length += ctx->end_len;
+    }
 
     return NGX_OK;
 }
@@ -1791,10 +1793,10 @@ ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *c
       conf->method_filter = NGX_HTTP_GET|NGX_HTTP_HEAD;
       if (conf->allow_put) {
         conf->method_filter |= NGX_HTTP_PUT;
-      } 
+      }
       if (conf->allow_delete) {
         conf->method_filter |= NGX_HTTP_DELETE;
-      } 
+      }
     }
 
     return NGX_CONF_OK;
