@@ -1261,7 +1261,7 @@ length:
                     u->headers_in.status_n = 304;
                     u->state->status = 304;
 
-                    u->headers_in.content_length_n = -1; 
+                    u->headers_in.content_length_n = -1;
                     if (u->headers_in.content_length) {
                       u->headers_in.content_length->hash = 0;
                       u->headers_in.content_length = NULL;
