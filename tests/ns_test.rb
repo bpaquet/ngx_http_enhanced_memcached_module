@@ -236,8 +236,6 @@ class NS < Test::Unit::TestCase
 
   def test_headers_wrong_format_no_end
     put '/toto_wrong_format_no_end', "EXTRACT_HEADERS\r\nthis content", @put_domain
-    p @resp.body
-    @resp.each_header {|key,value| puts "#{key} = #{value}" }
     assert_stored
     get '/toto_wrong_format_no_end', @std_domain
     assert_equal "502", @resp.code
