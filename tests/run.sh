@@ -26,6 +26,7 @@ if [ "$NGINX_BUILD" != "" ]; then
 	cd ../../
 fi
 cp nginx.conf work
+ln -s ../test_data work/html
 $NGINX_BIN -p $(pwd)/work -c nginx.conf
 sleep 1
 
@@ -36,11 +37,17 @@ kill $(cat work/nginx.pid)
 
 sleep 1
 
+cat work/logs/error.log | grep '\\[error\\]'
+if [ $? == 0 ]; then
+	echo "Found error in logs, abord"
+	exit 1
+fi
+
 # if [ $res != 0 ]; then
 # 	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/error.log -H 'Content-type: application/octet-stream'
 # 	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
 # fi
 
-rm -rf work
+# rm -rf work
 
 exit $res

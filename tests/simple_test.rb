@@ -69,4 +69,11 @@ class Simple < Test::Unit::TestCase
     assert_not_nil @resp['Date']
   end
 
+  def test_serve_static
+    get '/small.html', @std_domain
+    assert_last_response "200", "text/html", load_bin_file('small.html')
+    get '/small2.html', @std_domain
+    assert_last_response "404", "text/html"
+  end
+
 end

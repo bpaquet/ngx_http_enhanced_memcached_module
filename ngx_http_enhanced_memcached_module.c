@@ -1611,7 +1611,7 @@ ngx_http_enhanced_memcached_filter(void *data, ssize_t bytes)
         return NGX_OK;
     }
 
-    last += u->length - ctx->end_len;
+    last += (size_t) u->length - ctx->end_len;
 
     if (ngx_strncmp(last, ctx->end, b->last - last) != 0) {
         ngx_log_error(NGX_LOG_ERR, ctx->request->connection->log, 0,
