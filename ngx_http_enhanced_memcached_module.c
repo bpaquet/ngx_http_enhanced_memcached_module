@@ -5,7 +5,7 @@
  * Copytight (C) Bertrand Paquet
  */
 
-
+#include <nginx.h>
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
@@ -1538,9 +1538,23 @@ ngx_http_enhanced_memcached_filter_init(void *data)
 
     u = ctx->request->upstream;
 
+#if nginx_version <= 1005003
+
     if (u->headers_in.status_n != 404) {
         u->length += ctx->end_len;
     }
+
+#else
+
+    if (u->headers_in.status_n != 404) {
+        u->length = u->headers_in.content_length_n + ctx->end_len;
+        ctx->rest = ctx->end_len;
+    }
+    else {
+        u-> length = 0;
+    }
+
+#endif
 
     return NGX_OK;
 }
