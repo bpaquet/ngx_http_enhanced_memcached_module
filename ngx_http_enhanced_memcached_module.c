@@ -231,6 +231,9 @@ static u_char  ngx_http_enhanced_memcached_crlf[] = CRLF;
 #define NGX_HTTP_ENHANCED_MEMCACHED_EXTRACT_HEADERS  (sizeof(ngx_http_enhanced_memcached_extract_headers) - 1)
 static u_char ngx_http_enhanced_memcached_extract_headers[] = "EXTRACT_HEADERS" CRLF;
 
+#define NGX_HTTP_ENHANCED_MEMCACHED_HEADER_STATUS  (sizeof(ngx_http_enhanced_memcached_header_status) - 1)
+static u_char ngx_http_enhanced_memcached_header_status[] = "X-Nginx-Status";
+
 static ngx_int_t
 ngx_http_enhanced_memcached_handler(ngx_http_request_t *r)
 {
@@ -1162,11 +1165,13 @@ length:
 
           ngx_table_elt_t                *h;
           ngx_int_t                       rc;
+          ngx_int_t                       status;
           ngx_http_upstream_main_conf_t  *umcf;
           ngx_http_upstream_header_t     *hh;
           ngx_table_elt_t                *last_modified;
 
           last_modified = NULL;
+          status = 200;
 
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                          "enhanced memcached: extracting headers from memcached value");
@@ -1188,6 +1193,17 @@ length:
             if (rc == NGX_OK) {
 
               /* a header line has been parsed successfully */
+
+              if ((r->header_name_end - r->header_name_start) == NGX_HTTP_ENHANCED_MEMCACHED_HEADER_STATUS && ngx_strncmp(r->header_name_start, ngx_http_enhanced_memcached_header_status, NGX_HTTP_ENHANCED_MEMCACHED_HEADER_STATUS) == 0) {
+                status = ngx_atoof(r->header_start, r->header_end - r->header_start);
+                if (status < 100) {
+                  ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                         "wrong value for status: \"%d\"", status);
+                  return NGX_ERROR;
+                }
+                u->headers_in.content_length_n -= u->buffer.pos - p;
+                continue;
+              }
 
               h = ngx_list_push(&r->upstream->headers_in.headers);
               if (h == NULL) {
@@ -1279,14 +1295,16 @@ length:
                 }
               }
 
-              if (ngx_http_set_content_type(r) != NGX_OK) {
-                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+              if (status < 300) {
+                if (ngx_http_set_content_type(r) != NGX_OK) {
+                  return NGX_HTTP_INTERNAL_SERVER_ERROR;
+                }
               }
 
               u->headers_in.content_length_n -= 2;
 
-              u->headers_in.status_n = 200;
-              u->state->status = 200;
+              u->headers_in.status_n = status;
+              u->state->status = status;
 
               return NGX_OK;
             }

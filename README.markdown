@@ -82,6 +82,18 @@ If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only o
 
 No modification of nginx config is needed.
 
+Status code
+===
+If you want to send a custom status code, (not a 200), just add the header ``X-Nginx-Status`` in custom headers.
+The memcached module will set the http return code accordingly, and remove this header.
+
+Example, to send a redirect 302:
+
+    EXTRACT_HEADERS\r\n
+    Location: http://www.google.com\r\n
+    X-Nginx-Status: 302\r\n
+    \r\n
+
 Hash keys
 ===
 

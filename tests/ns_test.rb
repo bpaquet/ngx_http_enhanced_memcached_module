@@ -133,6 +133,33 @@ class NS < Test::Unit::TestCase
     assert_last_response "200", "application/octet-stream", ''
   end
 
+  def test_302
+    put '/empty', "EXTRACT_HEADERS\r\nLocation: http://www.google.com\r\nX-Nginx-Status: 302\r\n\r\n", @put_domain
+    assert_stored
+    get '/empty', @std_domain
+    assert_equal "302", @resp.code
+    assert_nil @resp['Content-Type']
+    assert_nil @resp['X-Nginx-Status']
+    assert_equal @resp['Location'], "http://www.google.com"
+  end
+
+  def test_99
+    put '/empty', "EXTRACT_HEADERS\r\nLocation: http://www.google.com\r\nX-Nginx-Status: 99\r\n\r\n", @put_domain
+    assert_stored
+    get '/empty', @std_domain
+    assert_equal "500", @resp.code
+    assert_nil @resp['X-Nginx-Status']
+  end
+
+
+  def test_wrong_status
+    put '/empty', "EXTRACT_HEADERS\r\nLocation: http://www.google.com\r\nX-Nginx-Status: abcd\r\n\r\n", @put_domain
+    assert_stored
+    get '/empty', @std_domain
+    assert_equal "500", @resp.code
+    assert_nil @resp['X-Nginx-Status']
+  end
+
   def test_image
     png = load_bin_file('show_48.png')
     assert_equal Digest::SHA1.hexdigest(png), '15ad4ab1b2b651cfd04aa83ae251a5ff06e2bf05'
