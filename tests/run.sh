@@ -19,7 +19,7 @@ if [ "$NGINX_BUILD" != "" ]; then
 	echo "Configuring ..."
 	./configure --with-debug --add-module=../../../../ngx_http_enhanced_memcached_module > build.log
 	echo "Building ..."
-	make > build.log
+	make -j4 > build.log
 	echo "Build OK."
 	export NGINX_BIN=$(pwd)/objs/nginx
 	set +e
