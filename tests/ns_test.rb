@@ -126,6 +126,13 @@ class NS < Test::Unit::TestCase
     assert_equal data, gunzip_content(@resp.body)
   end
 
+  def test_empty
+    put '/empty', "EXTRACT_HEADERS\r\nContent-Type: application/octet-stream\r\n\r\n", @put_domain
+    assert_stored
+    get '/empty', @std_domain
+    assert_last_response "200", "application/octet-stream", ''
+  end
+
   def test_image
     png = load_bin_file('show_48.png')
     assert_equal Digest::SHA1.hexdigest(png), '15ad4ab1b2b651cfd04aa83ae251a5ff06e2bf05'
