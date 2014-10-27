@@ -81,15 +81,6 @@ static char *ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf,
 static char *ngx_http_enhanced_memcached_pass(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 
-static ngx_conf_bitmask_t  ngx_http_enhanced_memcached_next_upstream_masks[] = {
-    { ngx_string("error"), NGX_HTTP_UPSTREAM_FT_ERROR },
-    { ngx_string("timeout"), NGX_HTTP_UPSTREAM_FT_TIMEOUT },
-    { ngx_string("invalid_response"), NGX_HTTP_UPSTREAM_FT_INVALID_HEADER },
-    { ngx_string("not_found"), NGX_HTTP_UPSTREAM_FT_HTTP_404 },
-    { ngx_string("off"), NGX_HTTP_UPSTREAM_FT_OFF },
-    { ngx_null_string, 0 }
-};
-
 static ngx_command_t  ngx_http_enhanced_memcached_commands[] = {
 
     { ngx_string("enhanced_memcached_pass"),
@@ -175,13 +166,6 @@ static ngx_command_t  ngx_http_enhanced_memcached_commands[] = {
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.read_timeout),
       NULL },
-
-    { ngx_string("enhanced_memcached_next_upstream"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
-      ngx_conf_set_bitmask_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.next_upstream),
-      &ngx_http_enhanced_memcached_next_upstream_masks },
 
       ngx_null_command
 };
@@ -1763,19 +1747,8 @@ ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *c
                               prev->upstream.buffer_size,
                               (size_t) ngx_pagesize);
 
-    ngx_conf_merge_bitmask_value(conf->upstream.next_upstream,
-                              prev->upstream.next_upstream,
-                              (NGX_CONF_BITMASK_SET
-                               |NGX_HTTP_UPSTREAM_FT_ERROR
-                               |NGX_HTTP_UPSTREAM_FT_TIMEOUT));
-
     conf->upstream.hide_headers_hash.buckets = ngx_pcalloc(cf->pool, sizeof(ngx_hash_elt_t *));
     conf->upstream.hide_headers_hash.size = 1;
-
-    if (conf->upstream.next_upstream & NGX_HTTP_UPSTREAM_FT_OFF) {
-        conf->upstream.next_upstream = NGX_CONF_BITMASK_SET
-                                       |NGX_HTTP_UPSTREAM_FT_OFF;
-    }
 
     if (conf->upstream.upstream == NULL) {
         conf->upstream.upstream = prev->upstream.upstream;
@@ -1929,8 +1902,8 @@ ngx_http_enhanced_memcached_init(ngx_conf_t *cf) {
   v = ngx_http_add_variable(cf, &ngx_http_enhanced_memcached_key_namespace, NGX_HTTP_VAR_CHANGEABLE);
    if (v == NULL) {
        return NGX_ERROR;
-   }
-   v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
+  }
+  v->get_handler = ngx_http_enhanced_memcached_variable_not_found;
 
   return NGX_OK;
 }

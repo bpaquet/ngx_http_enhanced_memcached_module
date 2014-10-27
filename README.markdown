@@ -49,7 +49,6 @@ All commands and variables are prepàfixed by `enhanced`.
 * [`enhanced_memcached_read_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_read_timeout)
 * [`enhanced_memcached_send_timeout`](http://wiki.nginx.org/HttpMemcachedModule#memcached_send_timeout)
 * [`enhanced_memcached_buffer_size`](http://wiki.nginx.org/HttpMemcachedModule#memcached_buffer_size)
-* [`enhanced_memcached_next_upstream`](http://wiki.nginx.org/HttpMemcachedModule#memcached_next_upstream)
 
 * [`$enhanced_memcached_key`](http://wiki.nginx.org/HttpMemcachedModule#.24memcached_key)
 
