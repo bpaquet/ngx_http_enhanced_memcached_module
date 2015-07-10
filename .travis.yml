@@ -9,4 +9,4 @@ env:
   - NGINX_BUILD=1.9.2
 services:
   - memcached
-script: "cd tests && sh run.sh"
+script: "cd tests && bash run.sh"
