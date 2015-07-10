@@ -37,8 +37,7 @@ kill $(cat work/nginx.pid)
 
 sleep 1
 
-cat work/logs/error.log | grep '\\[error\\]'
-if [ $? == 0 ]; then
+if cat work/logs/error.log | grep '\\[error\\]'; then
 	echo "Found error in logs, abort"
 	exit 1
 fi
