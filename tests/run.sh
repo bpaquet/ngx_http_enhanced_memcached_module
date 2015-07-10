@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo flush_all | nc localhost 11211 | grep OK > /dev/null
 if [ $? != 0 ]; then
