@@ -37,7 +37,7 @@ kill $(cat work/nginx.pid)
 
 sleep 1
 
-if cat work/logs/error.log | grep '\\[error\\]'; then
+if cat work/logs/error.log | grep '\[error\]' | grep -v 'manage http headers on multiple process_header call is not implemented' | grep -v 'No such file or directory'; then
 	echo "Found error in logs, abort"
 	exit 1
 fi
@@ -47,6 +47,6 @@ fi
 # 	curl -s -X POST ec2-54-76-187-89.eu-west-1.compute.amazonaws.com:1337 --data-binary @work/logs/access.log -H 'Content-type: application/octet-stream'
 # fi
 
-rm -rf work
+# rm -rf work
 
 exit $res
