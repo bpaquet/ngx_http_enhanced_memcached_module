@@ -4,8 +4,9 @@ rvm:
 env:
   - NGINX_BUILD=1.2.9
   - NGINX_BUILD=1.4.7
-  - NGINX_BUILD=1.6.1
-  - NGINX_BUILD=1.7.4
+  - NGINX_BUILD=1.6.3
+  - NGINX_BUILD=1.7.11
+  - NGINX_BUILD=1.9.2
 services:
   - memcached
 script: "cd tests && sh run.sh"
