@@ -1,4 +1,4 @@
-# Enhanced Nginx Memached Module
+# Enhanced Nginx Memcached Module
 
 [![Build Status](https://travis-ci.org/bpaquet/ngx_http_enhanced_memcached_module.png)](https://travis-ci.org/bpaquet/ngx_http_enhanced_memcached_module)
 
@@ -15,6 +15,7 @@ This module is based on the standard [Nginx Memcached module](http://wiki.nginx.
 * Get memcached'stats, via HTTP request to nginx
 * Manage key namespaces, for partial memcached flush
 * Reply `304 Not Modified` for request with `If-Modified-Since` headers and content with `Last-Modified` in cache
+* Set custom HTTP code to send redirect
 
 You can find some explanation around why this module has been created in this [blog post](http://blog.octo.com/en/http-caching-with-nginx-and-memcached/).
 
@@ -63,7 +64,7 @@ Instead of inserting raw data in memcached, put something like that
     <toto></toto>
 
 Memcached module will set the header `Content-Type` to the specified value `text-xml` instead of the default one.
-The http body will only contains `<toto></toto>`.
+The HTTP body will only contains `<toto></toto>`.
 
 Before the body, line delimiters have to be `\r\n`, like in HTTP.
 
@@ -77,14 +78,14 @@ Another example with special chars and two headers:
 
 
 You can add multiple headers if you need.
-If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the http body.
+If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the HTTP body.
 
 No modification of nginx config is needed.
 
 Status code
 ===
 If you want to send a custom status code, (not a 200), just add the header ``X-Nginx-Status`` in custom headers.
-The memcached module will set the http return code accordingly, and remove this header.
+The memcached module will set the HTTP return code accordingly, and remove this header.
 
 Example, to send a redirect 302:
 
@@ -134,7 +135,7 @@ Or
 
 The first one will set a fixed expire value (2 seconds).
 
-The second one will take the expire value to set in memcached from http header `Memcached-Expire`.
+The second one will take the expire value to set in memcached from HTTP header `Memcached-Expire`.
 
 Use the `add` memcached command
 ---
@@ -149,7 +150,7 @@ Or
 
 The first one will always force the use of `add` memcached command.
 
-The second one will use the `add` memcached command only if the http header `Memcached-Use-Add` is present.
+The second one will use the `add` memcached command only if the HTTP header `Memcached-Use-Add` is present.
 
 If you send an `add` command on an existing key, memcached will respond `NOT_STORED`, and the nginx module will issue a HTTP code 409.
 
