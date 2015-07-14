@@ -354,6 +354,7 @@ class NS < Test::Unit::TestCase
     assert_equal "200", @resp.code
     assert_equal "text/plain", @resp.content_type
     assert @resp.body.scan(/^STAT .+$/).count > 30
+    assert_nil @resp.body.match(/^END/)
   end
 
   def test_expire
