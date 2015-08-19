@@ -78,7 +78,7 @@ Another example with special chars and two headers:
 
 
 You can add multiple headers if you need.
-If you do'nt start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the HTTP body.
+If you don't start with `EXTRACT_HEADERS`, enhanced memcached module will only output the content in the HTTP body.
 
 No modification of nginx config is needed.
 
