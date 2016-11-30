@@ -36,7 +36,7 @@ Rebuild Nginx, and enjoy !
 
 You can find configuration example in [tests](https://github.com/bpaquet/ngx_http_enhanced_memcached_module/blob/master/tests/nginx.conf).
 
-Note : this module is tested with Nginx 1.2.x, 1.4.x, 1.6.x, 1.8.x, 1.11.x and is used in production at [fasterize](http://www.fasterize.com).
+Note : this module is tested with Nginx 1.2.x, 1.4.x, 1.6.x, 1.8.x, 1.10.x, 1.11.x and is used in production at [fasterize](http://www.fasterize.com).
 
 Base config
 ===

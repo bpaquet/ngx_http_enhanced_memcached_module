@@ -6,6 +6,7 @@ env:
   - NGINX_BUILD=1.4.7
   - NGINX_BUILD=1.6.3
   - NGINX_BUILD=1.8.1
+  - NGINX_BUILD=1.10.2
   - NGINX_BUILD=1.11.1
 services:
   - memcached
