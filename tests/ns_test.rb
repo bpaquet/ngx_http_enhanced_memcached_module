@@ -172,6 +172,18 @@ class NS < Test::Unit::TestCase
     assert_not_nil @resp['Date']
   end
 
+  def test_image_content_length
+    png = load_bin_file('show_48.png')
+    assert_equal Digest::SHA1.hexdigest(png), '15ad4ab1b2b651cfd04aa83ae251a5ff06e2bf05'
+    put '/png', "EXTRACT_HEADERS\r\nContent-Length: 6132\r\nContent-Type: image/png\r\n\r\n" + png, @put_domain
+    assert_stored
+    get '/png', @std_domain
+    assert_last_response "200", "image/png", png
+    assert_equal Digest::SHA1.hexdigest(@resp.body), '15ad4ab1b2b651cfd04aa83ae251a5ff06e2bf05'
+    assert_equal nil, @resp['Content-Encoding']
+    assert_not_nil @resp['Date']
+  end
+
   def test_jquery_not_gzipped_by_nginx
     jq = load_bin_file('jquery-1.6.4.js')
     put '/jq', "EXTRACT_HEADERS\r\nContent-Type: application/javascript\r\n\r\n" + jq, @put_domain

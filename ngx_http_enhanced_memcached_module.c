@@ -1165,7 +1165,9 @@ length:
           ngx_http_upstream_main_conf_t  *umcf;
           ngx_http_upstream_header_t     *hh;
           ngx_table_elt_t                *last_modified;
+          ngx_table_elt_t                *content_length;
 
+          content_length = NULL;
           last_modified = NULL;
           status = 200;
 
@@ -1226,7 +1228,7 @@ length:
               if (h->key.len == r->lowcase_index) {
                 ngx_memcpy(h->lowcase_key, r->lowcase_header, h->key.len);
               } else {
-                  ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
+                ngx_strlow(h->lowcase_key, h->key.data, h->key.len);
               }
 
               hh = ngx_hash_find(&umcf->headers_in_hash, h->hash,
@@ -1238,6 +1240,10 @@ length:
 
               if (h->key.len == sizeof("Last-Modified") - 1 && ngx_strncmp(h->key.data, "Last-Modified", h->key.len) == 0) {
                 last_modified = h;
+              }
+
+              if (h->key.len == sizeof("Content-Length") - 1 && ngx_strncmp(h->key.data, "Content-Length", h->key.len) == 0) {
+                content_length = h;
               }
 
               ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1298,6 +1304,9 @@ length:
               }
 
               u->headers_in.content_length_n -= 2;
+              if (content_length != NULL) {
+                u->headers_in.content_length_n = ngx_atoi(content_length->value.data, content_length->value.len);
+              }
 
               u->headers_in.status_n = status;
               u->state->status = status;
