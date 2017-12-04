@@ -22,6 +22,7 @@ typedef struct {
     ngx_int_t                  expire_index;
     ngx_int_t                  use_add_index;
     ngx_int_t                  key_namespace_index;
+    ngx_uint_t                 gzip_flag;
     ngx_flag_t                 hash_keys_with_md5;
     ngx_flag_t                 allow_put;
     ngx_flag_t                 allow_delete;
@@ -167,6 +168,13 @@ static ngx_command_t  ngx_http_enhanced_memcached_commands[] = {
       ngx_conf_set_msec_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_enhanced_memcached_loc_conf_t, upstream.read_timeout),
+      NULL },
+
+    { ngx_string("enhanced_memcached_gzip_flag"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_num_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_enhanced_memcached_loc_conf_t, gzip_flag),
       NULL },
 
       ngx_null_command
@@ -568,14 +576,15 @@ ngx_http_enhanced_memcached_set_key_with_namespace(ngx_http_request_t * r) {
 static ngx_int_t
 ngx_http_enhanced_memcached_process_key(ngx_http_request_t * r) {
   ngx_int_t                       rc;
-  u_char                         *p, *len;
+  u_char                         *p, *len, *start;
   ngx_str_t                       line;
   ngx_http_upstream_t             *u;
   ngx_http_enhanced_memcached_ctx_t       *ctx;
   off_t                           value_len;
-
+  ngx_http_enhanced_memcached_loc_conf_t  *mlcf;
+  ngx_table_elt_t                *h;
   u = r->upstream;
-
+  ngx_uint_t                      flags;
   for (p = u->buffer.pos; p < u->buffer.last; p++) {
     if (*p == LF) {
       goto found;
@@ -624,16 +633,37 @@ found:
       if (*p++ != ' ') {
          goto no_valid;
       }
-
+      mlcf = ngx_http_get_module_loc_conf(r, ngx_http_enhanced_memcached_module);
       /* skip flags */
-
+      start = p;
       while (*p) {
         if (*p++ == ' ') {
-          goto length;
+          if (mlcf->gzip_flag) {
+            goto flags;
+           } else {
+            goto length;
+           }
         }
       }
 
       goto no_valid;
+
+flags:
+        flags = ngx_atoi(start, p - start - 1);
+        if (flags & mlcf->gzip_flag) {
+            h = ngx_list_push(&r->headers_out.headers);
+            if (h == NULL) {
+                return NGX_ERROR;
+            }
+
+            h->hash = 1;
+            h->key.len = sizeof("Content-Encoding") - 1;
+            h->key.data = (u_char *) "Content-Encoding";
+            h->value.len = sizeof("gzip") - 1;
+            h->value.data = (u_char *) "gzip";
+
+            r->headers_out.content_encoding = h;
+        }
 
 length:
 
@@ -1760,6 +1790,8 @@ ngx_http_enhanced_memcached_create_loc_conf(ngx_conf_t *cf)
     conf->key_index = NGX_CONF_UNSET;
     conf->expire_index = NGX_CONF_UNSET;
 
+    conf->gzip_flag = NGX_CONF_UNSET_UINT;
+
     return conf;
 }
 
@@ -1839,7 +1871,7 @@ ngx_http_enhanced_memcached_merge_loc_conf(ngx_conf_t *cf, void *parent, void *c
         conf->method_filter |= NGX_HTTP_DELETE;
       }
     }
-
+    ngx_conf_merge_uint_value(conf->gzip_flag, prev->gzip_flag, 0);
     return NGX_CONF_OK;
 }
 
