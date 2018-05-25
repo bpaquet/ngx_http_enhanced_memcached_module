@@ -1164,11 +1164,13 @@ length:
           ngx_int_t                       status;
           ngx_http_upstream_main_conf_t  *umcf;
           ngx_http_upstream_header_t     *hh;
+          ngx_table_elt_t                *etag;
           ngx_table_elt_t                *last_modified;
           ngx_table_elt_t                *content_length;
 
           content_length = NULL;
           last_modified = NULL;
+          etag = NULL;
           status = 200;
 
           ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -1238,6 +1240,10 @@ length:
                 return NGX_ERROR;
               }
 
+              if (h->key.len == sizeof("Etag") - 1 && ngx_strncmp(h->key.data, "Etag", h->key.len) == 0) {
+                etag = h;
+              }
+
               if (h->key.len == sizeof("Last-Modified") - 1 && ngx_strncmp(h->key.data, "Last-Modified", h->key.len) == 0) {
                 last_modified = h;
               }
@@ -1260,7 +1266,33 @@ length:
               /* a whole header has been parsed successfully */
 
               ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "enhanced memached: header done");
+                           "enhanced memcached: header done");
+
+              if (etag != NULL && r->headers_in.if_none_match != NULL) {
+                ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                            "enhanced memcached have etag and if-none-match");
+                if (r->headers_in.if_none_match->value.len == etag->value.len) {
+                  if (!ngx_strncmp(r->headers_in.if_none_match->value.data, etag->value.data, etag->value.len)) {
+                    u->headers_in.status_n = 304;
+                    u->state->status = 304;
+
+                    u->headers_in.content_length_n = -1;
+                    if (u->headers_in.content_length) {
+                      u->headers_in.content_length->hash = 0;
+                      u->headers_in.content_length = NULL;
+                    }
+
+                    if (u->headers_in.content_type) {
+                      u->headers_in.content_type->hash = 0;
+                      u->headers_in.content_type = NULL;
+                    }
+
+                    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                                "enhanced memcached sent not modified (etag)");
+                    return NGX_OK;
+                  }
+                }
+              }
 
               if (last_modified != NULL && r->headers_in.if_modified_since != NULL) {
                 time_t                     ims_in;
@@ -1291,7 +1323,7 @@ length:
                     }
 
                     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
-                                "enhanced memached sent not modified");
+                                "enhanced memcached sent not modified");
                     return NGX_OK;
                   }
                 }

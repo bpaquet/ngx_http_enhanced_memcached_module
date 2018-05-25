@@ -378,7 +378,7 @@ class NS < Test::Unit::TestCase
     assert_last_response "200", "application/octet-stream", 'this content'
     get '/titi', @std_domain
     assert_last_response "200", "application/octet-stream", 'this content 2'
-    sleep 3
+    sleep 4
     get '/toto', @std_domain
     assert_not_equal "200", @resp.code
     get '/titi', @std_domain
@@ -480,6 +480,47 @@ class NS < Test::Unit::TestCase
     get '/png', @std_domain, {"If-Modified-Since" => "Mon, 23 Apr 2012 13:45:23 GMT"}
     assert_last_response_code "304"
     assert_equal "Mon, 23 Apr 2012 13:45:23 GMT", @resp['Last-Modified']
+    assert_equal "tata", @resp["MyHeader"]
+    assert_nil @resp["Content-Type"]
+    assert_nil @resp["Content-Length"]
+    assert_nil @resp.body
+  end
+
+  def test_if_none_match
+    put '/toto', "EXTRACT_HEADERS\r\nMyHeader: tata\r\nEtag: foo\r\n\r\nthis content", @put_domain
+    assert_stored
+    get '/toto', @std_domain
+    assert_last_response "200", "application/octet-stream", 'this content'
+    assert_equal "foo", @resp['Etag']
+    assert_equal "tata", @resp["MyHeader"]
+    get '/toto', @std_domain, {"If-None-Match" => "bar"}
+    assert_last_response "200", "application/octet-stream", 'this content'
+    assert_equal "foo", @resp['Etag']
+    assert_equal "tata", @resp["MyHeader"]
+    get '/toto', @std_domain, {"If-None-Match" => "foo"}
+    assert_last_response_code "304"
+    assert_equal "foo", @resp['Etag']
+    assert_equal "tata", @resp["MyHeader"]
+    assert_nil @resp["Content-Type"]
+    assert_nil @resp["Content-Length"]
+    assert_nil @resp.body
+  end
+
+  def test_if_none_match_png
+    png = load_bin_file('show_48.png')
+    put '/png', "EXTRACT_HEADERS\r\nMyHeader: tata\r\nEtag: foo\r\nContent-Type: image/png\r\n\r\n" + png, @put_domain
+    assert_stored
+    get '/png', @std_domain
+    assert_last_response "200", "image/png", png
+    assert_equal "foo", @resp['Etag']
+    assert_equal "tata", @resp["MyHeader"]
+    get '/png', @std_domain, {"If-None-Match" => "bar"}
+    assert_last_response "200", "image/png", png
+    assert_equal "foo", @resp['Etag']
+    assert_equal "tata", @resp["MyHeader"]
+    get '/png', @std_domain, {"If-None-Match" => "foo"}
+    assert_last_response_code "304"
+    assert_equal "foo", @resp['Etag']
     assert_equal "tata", @resp["MyHeader"]
     assert_nil @resp["Content-Type"]
     assert_nil @resp["Content-Length"]
