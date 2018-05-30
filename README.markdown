@@ -15,6 +15,7 @@ This module is based on the standard [Nginx Memcached module](http://wiki.nginx.
 * Get memcached'stats, via HTTP request to nginx
 * Manage key namespaces, for partial memcached flush
 * Reply `304 Not Modified` for request with `If-Modified-Since` headers and content with `Last-Modified` in cache
+* Reply `304 Not Modified` for request with `If-None-Match` headers and content with `ETag` in cache
 * Set custom HTTP code to send redirect
 
 You can find some explanations qbout why this module has been created in this [blog post](http://blog.octo.com/en/http-caching-with-nginx-and-memcached/).
@@ -225,7 +226,9 @@ You can flush a namespace (in reality, it only increment the key prefix) with a 
 304 Not Modified
 ===
 
-For request with HTTP Header `If-Modified-Since`, and associated resource in memcached with HTTP Headers `Last-Modified`, the module will send a 304 Not Modified if resource has not been modified, and if Nginx [configuration](http://wiki.nginx.org/HttpCoreModule#if_modified_since) allows this behaviour.
+For request with HTTP Header `If-Modified-Since`, and associated resource in memcached with HTTP Header `Last-Modified`, the module will send a 304 Not Modified if resource has not been modified, and if Nginx [configuration](http://wiki.nginx.org/HttpCoreModule#if_modified_since) allows this behaviour.
+
+For request with HTTP Header `If-None-Match`, and associated resource in memcached with HTTP Header `ETag`, the module will send a 304 Not Modified if resource has not been modified.
 
 License
 ===

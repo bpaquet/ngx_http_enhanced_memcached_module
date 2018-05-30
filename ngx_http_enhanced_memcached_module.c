@@ -1240,7 +1240,7 @@ length:
                 return NGX_ERROR;
               }
 
-              if (h->key.len == sizeof("Etag") - 1 && ngx_strncmp(h->key.data, "Etag", h->key.len) == 0) {
+              if (h->key.len == sizeof("ETag") - 1 && ngx_strncmp(h->key.data, "ETag", h->key.len) == 0) {
                 etag = h;
               }
 
