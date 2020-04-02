@@ -1240,17 +1240,21 @@ length:
                 return NGX_ERROR;
               }
 
-              if (h->key.len == sizeof("ETag") - 1 && ngx_strncmp(h->key.data, "ETag", h->key.len) == 0) {
-                etag = h;
-              }
-
-              if (h->key.len == sizeof("Last-Modified") - 1 && ngx_strncmp(h->key.data, "Last-Modified", h->key.len) == 0) {
-                last_modified = h;
-              }
-
-              if (h->key.len == sizeof("Content-Length") - 1 && ngx_strncmp(h->key.data, "Content-Length", h->key.len) == 0) {
-                content_length = h;
-              }
+              if (h->key.len)
+                switch (h->key.data[0]) {
+                  case 'e':
+                      if (h->key.len == sizeof("ETag") - 1 && ngx_strncmp(h->key.data, "etag", h->key.len) == 0)
+                        etag = h;
+                    break;
+                  case 'l':
+                      if (h->key.len == sizeof("Last-Modified") - 1 && ngx_strncmp(h->key.data, "last-modified", h->key.len) == 0)
+                        etag = h;
+                    break;
+                  case 'c':
+                      if (h->key.len == sizeof("Content-Length") - 1 && ngx_strncmp(h->key.data, "content-length", h->key.len) == 0)
+                        etag = h;
+                    break;
+                }
 
               ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "enhanced memcached: extracted header: \"%V: %V\"",
